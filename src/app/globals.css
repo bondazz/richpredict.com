@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050810;
+  --foreground: #ffffff;
+  --rich-blue: #0B1120;
+  --neon-gold: #D4FF00;
+  --neon-green: #39FF14;
+  --glass-bg: rgba(11, 17, 32, 0.7);
+  --glass-border: rgba(212, 255, 0, 0.2);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--rich-blue);
+  --color-accent: var(--neon-gold);
+  --color-neon-green: var(--neon-green);
+  --color-glass: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: radial-gradient(circle at top left, #0D1629 0%, #050810 50%, #020408 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+  }
+  
+  .neon-glow {
+    text-shadow: 0 0 10px rgba(212, 255, 0, 0.5), 0 0 20px rgba(212, 255, 0, 0.3);
+  }
+  
+  .neon-border {
+    box-shadow: 0 0 15px rgba(212, 255, 0, 0.15);
+  }
+}
+
