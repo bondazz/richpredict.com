@@ -20,6 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
         title: `AI ${sport} Predictions & Betting Tips | RichPredict`,
         description: `Get the most accurate AI-powered ${sport} predictions, analytics, and betting tips. High-probability outcomes for all major ${sport} events.`,
+        alternates: {
+            canonical: `https://richpredict.com/${sportParam.toLowerCase()}`,
+        },
     };
 }
 

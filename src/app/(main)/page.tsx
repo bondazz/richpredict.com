@@ -1,3 +1,11 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    alternates: {
+        canonical: 'https://richpredict.com',
+    },
+};
+
 export const revalidate = 0;
 import Link from "next/link";
 import { Zap, Trophy, Loader2, Star, ArrowRight, ChevronDown } from "lucide-react";

@@ -14,6 +14,11 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" className="dark">
+            <head>
+                <link rel="preconnect" href="https://fonts.cdnfonts.com" />
+                <link rel="preconnect" href="https://xacflkmlqvifsxwysofm.supabase.co" />
+                <link rel="dns-prefetch" href="https://fonts.cdnfonts.com" />
+            </head>
             <body className={cn("min-h-screen bg-[var(--fs-bg)] font-sans antialiased")}>
                 {children}
             </body>

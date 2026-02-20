@@ -82,18 +82,18 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                 <div className="max-w-[1240px] mx-auto w-full px-2 flex justify-between items-center h-14 md:h-16">
                     <div className="flex items-center gap-3 md:gap-8 h-full min-w-0">
                         {/* Logo */}
-                        <Link href="/" className="flex items-center group shrink-0">
+                        <Link href="/" className="flex items-center group shrink-0" aria-label="RichPredict Homepage">
                             <div className="relative w-10 h-10 md:w-14 md:h-14 flex items-center justify-center">
                                 <svg viewBox="0 0 160 100" fill="currentColor" className="w-full h-full">
                                     <g className="text-white">
-                                        <path d="m21.1 55.1c-.5-2.6-.6-5.1-.3-7.6l-20.6-1.9c-.4 4.3-.2 8.6.6 13s2.1 8.6 3.9 12.5l18.7-8.7c-1-2.3-1.8-4.7-2.3-7.3" />
-                                        <path d="m27.6 68.8-15.9 13.3c4.7 5.6 10.6 10.1 17.2 13.2l8.7-18.7c-3.8-1.9-7.3-4.5-10-7.8" />
-                                        <path d="m55.1 78.9c-2.6.5-5.2.6-7.6.3l-1.8 20.6c4.3.4 8.6.2 13-.6 1.4-.3 2.9-.6 4.3-.9l-5.4-20c-.8.2-1.7.4-2.5.6" />
-                                        <path d="m44.9 21.1c3.5-.6 7.1-.6 10.4 0l8.9-19.1c-7.2-2.1-15-2.7-22.9-1.3-19.7 3.5-34.7 18.2-39.6 36.4l20 5.4c2.9-10.7 11.6-19.3 23.2-21.4" />
-                                        <path d="m68.8 72.5 13.3 15.8c3.3-2.8 6.3-6.1 8.8-9.6l-16.9-11.9c-1.5 2.1-3.2 4-5.2 5.7" />
-                                        <path d="m99.8 45.6-20.6 1.8c.2 1.7.2 3.4 0 5.1l20.6 1.8c.3-2.8.3-5.7 0-8.7" />
+                                        <path d="M21.1 55.1C20.6 52.5 20.5 50 20.8 47.5L0.2 45.6C-0.2 49.9 0 54.2 0.8 58.6C1.6 63 2.9 67.2 4.7 71.1L23.4 62.4C22.4 60.1 21.6 57.7 21.1 55.1Z" />
+                                        <path d="M27.6 68.8L11.7 82.1C16.4 87.7 22.3 92.2 28.9 95.3L37.6 76.6C33.8 74.7 30.3 72.1 27.6 68.8Z" />
+                                        <path d="M55.1 78.9C52.5 79.4 49.9 79.5 47.5 79.2L45.7 99.8C50 100.2 54.3 100 58.7 99.2C60.1 98.9 61.6 98.6 63 98.3L57.6 78.3C56.8 78.5 55.9 78.7 55.1 78.9Z" />
+                                        <path d="M44.9 21.1C48.4 20.5 52 20.5 55.3 21.1L64.2 2C57 0 49.2 -0.6 41.3 0.8C21.6 4.3 6.6 19 1.7 37.2L21.7 42.6C24.6 31.9 33.3 23.3 44.9 21.2Z" />
+                                        <path d="M68.8 72.5L82.1 88.3C85.4 85.5 88.4 82.2 90.9 78.7L74 66.8C72.5 68.9 70.8 70.8 68.8 72.5Z" />
+                                        <path d="M99.8 45.6L79.2 47.4C79.4 49.1 79.4 50.8 79.2 52.5L99.8 54.3C100.1 51.5 100.1 48.6 99.8 45.6Z" />
                                     </g>
-                                    <path d="m73.3 0-19.2 41.3 83.1-41.3z" fill="var(--fs-yellow)" />
+                                    <path d="M73.3 0L54.1 41.3L137.2 0Z" fill="var(--fs-yellow)" />
                                 </svg>
                             </div>
                             <span className="text-xl md:text-2xl font-black tracking-tighter text-white uppercase font-[Klapt] leading-none ml-[-8px] md:ml-[-12px]">
@@ -148,7 +148,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                     </div>
 
                     <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="text-[var(--fs-text-dim)] hover:bg-white/5 h-8 w-8 md:h-10 md:w-10 shrink-0">
+                        <Button variant="ghost" size="icon" className="text-[var(--fs-text-dim)] hover:bg-white/5 h-8 w-8 md:h-10 md:w-10 shrink-0" aria-label="Search">
                             <Search className="w-4 h-4 md:w-5 md:h-5" />
                         </Button>
                         <Button variant="ghost" className="flex items-center gap-1.5 px-2 md:px-3 hover:bg-white/5 text-[var(--fs-text-dim)] hover:text-white transition-colors h-8 md:h-10 shrink-0">
@@ -163,6 +163,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                 size="icon"
                                 onClick={() => setIsMenuOpen(true)}
                                 className="text-[var(--fs-text-dim)] hover:bg-white/5 h-8 w-8"
+                                aria-label="Open menu"
                             >
                                 <Menu size={20} />
                             </Button>

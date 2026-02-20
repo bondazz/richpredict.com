@@ -50,6 +50,7 @@ export default function MobileMenu({
                             <button
                                 onClick={onClose}
                                 className="p-1 hover:bg-white/5 rounded-full text-[var(--fs-text-dim)] hover:text-white transition-colors"
+                                aria-label="Close menu"
                             >
                                 <X size={20} />
                             </button>

@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: ['/admin/', '/login/'],
+            disallow: ['/admin/', '/api/'],
         },
-        sitemap: 'https://predict.ai/sitemap.xml',
+        sitemap: 'https://richpredict.com/sitemap.xml',
     }
 }
