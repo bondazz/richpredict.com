@@ -1,52 +1,280 @@
 @import "tailwindcss";
+@import url('https://fonts.cdnfonts.com/css/klapt');
 
-:root {
-  --background: #050810;
-  --foreground: #ffffff;
-  --rich-blue: #0B1120;
-  --neon-gold: #D4FF00;
-  --neon-green: #39FF14;
-  --glass-bg: rgba(11, 17, 32, 0.7);
-  --glass-border: rgba(212, 255, 0, 0.2);
-}
+@theme {
+  --color-brand-primary: #ffe438;
+  --color-brand-secondary: #10b981;
+  --color-brand-accent: #ffe438;
 
-@theme inline {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: var(--rich-blue);
-  --color-accent: var(--neon-gold);
-  --color-neon-green: var(--neon-green);
-  --color-glass: var(--glass-bg);
-  --color-glass-border: var(--glass-border);
-  
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: "Inter", "Saira", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-klapt: "Klapt", "Saira", sans-serif;
+
+  --fs-bg: #00141e;
+  --fs-header: #001e28;
+  --fs-border: rgba(255, 255, 255, 0.08);
+  --fs-text-main: #e6e6e6;
+  --fs-text-dim: rgba(230, 230, 230, 0.4);
+  --fs-yellow: #ffe438;
 }
 
-body {
-  background: radial-gradient(circle at top left, #0D1629 0%, #050810 50%, #020408 100%);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  min-height: 100vh;
-  margin: 0;
-  -webkit-font-smoothing: antialiased;
+:root {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #ffe438;
+  --primary-foreground: #001e28;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #18181b;
+  --radius: 0.25rem;
+}
+
+.dark {
+  --background: #00141e;
+  --foreground: #e6e6e6;
+  --card: #001e28;
+  --card-foreground: #e6e6e6;
+  --popover: #001e28;
+  --popover-foreground: #e6e6e6;
+  --primary: #ffe438;
+  --primary-foreground: #001e28;
+  --secondary: #002d3c;
+  --secondary-foreground: #e6e6e6;
+  --muted: #002d3c;
+  --muted-foreground: rgba(230, 230, 230, 0.4);
+  --accent: #002d3c;
+  --accent-foreground: #e6e6e6;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fafafa;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #ffe438;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: 11px;
+    font-family: Arial, Helvetica, sans-serif;
+    @apply transition-colors duration-300 antialiased;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
+
+/* Flashscore Provided Styles */
+.sportName.soccer {
+  background-color: var(--fs-header);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.headerLeague__wrapper {
+  background-color: var(--fs-header);
+  border-radius: 8px 8px 0 0;
+}
+
+.wcl-header_HrElx {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--fs-border);
+}
+
+.headerLeague__title {
+  color: #fff;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.headerLeague__category {
+  color: var(--fs-text-dim);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.event__match {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fs-border);
+  background-color: var(--fs-header);
+  position: relative;
+  cursor: pointer;
+}
+
+.event__match:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.event__time,
+.event__stage {
+  width: 45px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--fs-text-dim);
+}
+
+.event__homeParticipant,
+.event__awayParticipant {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.event__score {
+  width: 20px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--fs-yellow);
+}
+
+.wcl-logo_UrSpU {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.icon--preview {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--fs-yellow);
+  background: rgba(255, 228, 56, 0.1);
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
 }
 
 @layer utilities {
-  .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 1rem;
+  .shimmer {
+    background: #001e28;
+    background-image: linear-gradient(to right, #001e28 0%, #002d3c 20%, #001e28 40%, #001e28 100%);
+    background-repeat: repeat-y;
+    background-size: 800px 1px;
+    animation: placeholderShimmer 1.5s linear infinite forwards;
   }
-  
-  .neon-glow {
-    text-shadow: 0 0 10px rgba(212, 255, 0, 0.5), 0 0 20px rgba(212, 255, 0, 0.3);
+
+  @keyframes placeholderShimmer {
+    0% {
+      background-position: -468px 0
+    }
+
+    100% {
+      background-position: 468px 0
+    }
   }
-  
-  .neon-border {
-    box-shadow: 0 0 15px rgba(212, 255, 0, 0.15);
+
+  .tournament-header {
+    background-color: var(--fs-header);
+    border: 1px solid var(--fs-border);
+    padding: 12px 16px;
+    border-radius: 2px;
+  }
+
+  .tabs-container {
+    display: flex;
+    border-bottom: 2px solid var(--fs-border);
+    gap: 16px;
+    padding: 0 4px;
+  }
+
+  .tab-item {
+    padding: 8px 2px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fs-text-dim);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab-item.active {
+    color: #fff;
+    border-bottom-color: var(--fs-yellow);
+  }
+
+  .event-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--fs-border);
+    transition: background-color 0.1s;
+    cursor: pointer;
+  }
+
+  .team-name {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .score-badge {
+    background-color: rgba(255, 228, 56, 0.1);
+    color: var(--fs-yellow);
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 1px;
+    font-family: var(--font-mono);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
-

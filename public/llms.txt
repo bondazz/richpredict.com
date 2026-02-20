@@ -1,0 +1,22 @@
+# AI Football Predict - Technical Overview & Structure
+
+AI Football Predict is a high-performance analytics platform for football predictions. It uses advanced neural networks to provide win probabilities and match insights.
+
+## Core Structure
+- **Home**: Main dashboard with upcoming fixtures and top AI tips.
+- **Predictions**: Detail pages for matches (`/prediction/[match-id]`).
+- **Leagues**: League-specific prediction lists (`/league/[league-slug]`).
+- **Premium**: Gated elite value bets and deep analytics.
+- **Blog**: SEO-focused match previews and tactical analysis.
+
+## Data Points Analyzed
+- H2H History (Recent 5-10 years)
+- Current Form (Last 5 matches)
+- Player Injuries & Suspensions
+- Tactical Setups & xG Data
+- Market Odds Discrepancies (Value Bets)
+
+## Technical Features
+- Framework: Next.js 15 (App Router)
+- SEO: Dynamic JSON-LD (SportsEvent, AnalysisNewsArticle)
+- Optimization: Zero LCP shift, WebP imagery, Edge Runtime OG Images.

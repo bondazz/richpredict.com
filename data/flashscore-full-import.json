@@ -1,0 +1,847 @@
+[
+  {
+    "country": "Angola",
+    "slug": "angola",
+    "leagues": []
+  },
+  {
+    "country": "Andorra",
+    "slug": "andorra",
+    "leagues": []
+  },
+  {
+    "country": "Antigua & Barbuda",
+    "slug": "antigua-barbuda",
+    "leagues": []
+  },
+  {
+    "country": "Algeria",
+    "slug": "algeria",
+    "leagues": []
+  },
+  {
+    "country": "Albania",
+    "slug": "albania",
+    "leagues": []
+  },
+  {
+    "country": "Armenia",
+    "slug": "armenia",
+    "leagues": []
+  },
+  {
+    "country": "Argentina",
+    "slug": "argentina",
+    "leagues": []
+  },
+  {
+    "country": "Aruba",
+    "slug": "aruba",
+    "leagues": []
+  },
+  {
+    "country": "Austria",
+    "slug": "austria",
+    "leagues": []
+  },
+  {
+    "country": "Australia",
+    "slug": "australia",
+    "leagues": []
+  },
+  {
+    "country": "Bangladesh",
+    "slug": "bangladesh",
+    "leagues": []
+  },
+  {
+    "country": "Azerbaijan",
+    "slug": "azerbaijan",
+    "leagues": []
+  },
+  {
+    "country": "Bahrain",
+    "slug": "bahrain",
+    "leagues": []
+  },
+  {
+    "country": "Belarus",
+    "slug": "belarus",
+    "leagues": []
+  },
+  {
+    "country": "Barbados",
+    "slug": "barbados",
+    "leagues": []
+  },
+  {
+    "country": "Belgium",
+    "slug": "belgium",
+    "leagues": []
+  },
+  {
+    "country": "Benin",
+    "slug": "benin",
+    "leagues": []
+  },
+  {
+    "country": "Bermuda",
+    "slug": "bermuda",
+    "leagues": []
+  },
+  {
+    "country": "Bhutan",
+    "slug": "bhutan",
+    "leagues": []
+  },
+  {
+    "country": "Bolivia",
+    "slug": "bolivia",
+    "leagues": []
+  },
+  {
+    "country": "Bosnia and Herzegovina",
+    "slug": "bosnia-and-herzegovina",
+    "leagues": []
+  },
+  {
+    "country": "Botswana",
+    "slug": "botswana",
+    "leagues": []
+  },
+  {
+    "country": "Burkina Faso",
+    "slug": "burkina-faso",
+    "leagues": []
+  },
+  {
+    "country": "Bulgaria",
+    "slug": "bulgaria",
+    "leagues": []
+  },
+  {
+    "country": "Brazil",
+    "slug": "brazil",
+    "leagues": []
+  },
+  {
+    "country": "Burundi",
+    "slug": "burundi",
+    "leagues": []
+  },
+  {
+    "country": "Cambodia",
+    "slug": "cambodia",
+    "leagues": []
+  },
+  {
+    "country": "Cameroon",
+    "slug": "cameroon",
+    "leagues": []
+  },
+  {
+    "country": "Canada",
+    "slug": "canada",
+    "leagues": []
+  },
+  {
+    "country": "Cape Verde",
+    "slug": "cape-verde",
+    "leagues": []
+  },
+  {
+    "country": "Chad",
+    "slug": "chad",
+    "leagues": []
+  },
+  {
+    "country": "China",
+    "slug": "china",
+    "leagues": []
+  },
+  {
+    "country": "Chile",
+    "slug": "chile",
+    "leagues": []
+  },
+  {
+    "country": "Colombia",
+    "slug": "colombia",
+    "leagues": []
+  },
+  {
+    "country": "Costa Rica",
+    "slug": "costa-rica",
+    "leagues": []
+  },
+  {
+    "country": "Cyprus",
+    "slug": "cyprus",
+    "leagues": []
+  },
+  {
+    "country": "Croatia",
+    "slug": "croatia",
+    "leagues": []
+  },
+  {
+    "country": "Dominican Republic",
+    "slug": "dominican-republic",
+    "leagues": []
+  },
+  {
+    "country": "Denmark",
+    "slug": "denmark",
+    "leagues": []
+  },
+  {
+    "country": "Czech Republic",
+    "slug": "czech-republic",
+    "leagues": []
+  },
+  {
+    "country": "DR Congo",
+    "slug": "dr-congo",
+    "leagues": []
+  },
+  {
+    "country": "Egypt",
+    "slug": "egypt",
+    "leagues": []
+  },
+  {
+    "country": "Ecuador",
+    "slug": "ecuador",
+    "leagues": []
+  },
+  {
+    "country": "El Salvador",
+    "slug": "el-salvador",
+    "leagues": []
+  },
+  {
+    "country": "England",
+    "slug": "england",
+    "leagues": []
+  },
+  {
+    "country": "Eswatini",
+    "slug": "eswatini",
+    "leagues": []
+  },
+  {
+    "country": "Estonia",
+    "slug": "estonia",
+    "leagues": []
+  },
+  {
+    "country": "Faroe Islands",
+    "slug": "faroe-islands",
+    "leagues": []
+  },
+  {
+    "country": "Ethiopia",
+    "slug": "ethiopia",
+    "leagues": []
+  },
+  {
+    "country": "Fiji",
+    "slug": "fiji",
+    "leagues": []
+  },
+  {
+    "country": "Finland",
+    "slug": "finland",
+    "leagues": []
+  },
+  {
+    "country": "Gabon",
+    "slug": "gabon",
+    "leagues": []
+  },
+  {
+    "country": "France",
+    "slug": "france",
+    "leagues": []
+  },
+  {
+    "country": "Gambia",
+    "slug": "gambia",
+    "leagues": []
+  },
+  {
+    "country": "Georgia",
+    "slug": "georgia",
+    "leagues": []
+  },
+  {
+    "country": "Germany",
+    "slug": "germany",
+    "leagues": []
+  },
+  {
+    "country": "Ghana",
+    "slug": "ghana",
+    "leagues": []
+  },
+  {
+    "country": "Gibraltar",
+    "slug": "gibraltar",
+    "leagues": []
+  },
+  {
+    "country": "Guatemala",
+    "slug": "guatemala",
+    "leagues": []
+  },
+  {
+    "country": "Greece",
+    "slug": "greece",
+    "leagues": []
+  },
+  {
+    "country": "Haiti",
+    "slug": "haiti",
+    "leagues": []
+  },
+  {
+    "country": "Hungary",
+    "slug": "hungary",
+    "leagues": []
+  },
+  {
+    "country": "Hong Kong",
+    "slug": "hong-kong",
+    "leagues": []
+  },
+  {
+    "country": "Guinea",
+    "slug": "guinea",
+    "leagues": []
+  },
+  {
+    "country": "Honduras",
+    "slug": "honduras",
+    "leagues": []
+  },
+  {
+    "country": "Iceland",
+    "slug": "iceland",
+    "leagues": []
+  },
+  {
+    "country": "India",
+    "slug": "india",
+    "leagues": []
+  },
+  {
+    "country": "Indonesia",
+    "slug": "indonesia",
+    "leagues": []
+  },
+  {
+    "country": "Iraq",
+    "slug": "iraq",
+    "leagues": []
+  },
+  {
+    "country": "Iran",
+    "slug": "iran",
+    "leagues": []
+  },
+  {
+    "country": "Israel",
+    "slug": "israel",
+    "leagues": []
+  },
+  {
+    "country": "Ireland",
+    "slug": "ireland",
+    "leagues": []
+  },
+  {
+    "country": "Italy",
+    "slug": "italy",
+    "leagues": []
+  },
+  {
+    "country": "Ivory Coast",
+    "slug": "ivory-coast",
+    "leagues": []
+  },
+  {
+    "country": "Jamaica",
+    "slug": "jamaica",
+    "leagues": []
+  },
+  {
+    "country": "Kazakhstan",
+    "slug": "kazakhstan",
+    "leagues": []
+  },
+  {
+    "country": "Jordan",
+    "slug": "jordan",
+    "leagues": []
+  },
+  {
+    "country": "Kosovo",
+    "slug": "kosovo",
+    "leagues": []
+  },
+  {
+    "country": "Japan",
+    "slug": "japan",
+    "leagues": []
+  },
+  {
+    "country": "Kenya",
+    "slug": "kenya",
+    "leagues": []
+  },
+  {
+    "country": "Kuwait",
+    "slug": "kuwait",
+    "leagues": []
+  },
+  {
+    "country": "Laos",
+    "slug": "laos",
+    "leagues": []
+  },
+  {
+    "country": "Kyrgyzstan",
+    "slug": "kyrgyzstan",
+    "leagues": []
+  },
+  {
+    "country": "Latvia",
+    "slug": "latvia",
+    "leagues": []
+  },
+  {
+    "country": "Lebanon",
+    "slug": "lebanon",
+    "leagues": []
+  },
+  {
+    "country": "Liechtenstein",
+    "slug": "liechtenstein",
+    "leagues": []
+  },
+  {
+    "country": "Lesotho",
+    "slug": "lesotho",
+    "leagues": []
+  },
+  {
+    "country": "Libya",
+    "slug": "libya",
+    "leagues": []
+  },
+  {
+    "country": "Liberia",
+    "slug": "liberia",
+    "leagues": []
+  },
+  {
+    "country": "Lithuania",
+    "slug": "lithuania",
+    "leagues": []
+  },
+  {
+    "country": "Luxembourg",
+    "slug": "luxembourg",
+    "leagues": []
+  },
+  {
+    "country": "Macao",
+    "slug": "macao",
+    "leagues": []
+  },
+  {
+    "country": "Malawi",
+    "slug": "malawi",
+    "leagues": []
+  },
+  {
+    "country": "Mali",
+    "slug": "mali",
+    "leagues": []
+  },
+  {
+    "country": "Malaysia",
+    "slug": "malaysia",
+    "leagues": []
+  },
+  {
+    "country": "Malta",
+    "slug": "malta",
+    "leagues": []
+  },
+  {
+    "country": "Mauritius",
+    "slug": "mauritius",
+    "leagues": []
+  },
+  {
+    "country": "Martinique",
+    "slug": "martinique",
+    "leagues": []
+  },
+  {
+    "country": "Mexico",
+    "slug": "mexico",
+    "leagues": []
+  },
+  {
+    "country": "Mauritania",
+    "slug": "mauritania",
+    "leagues": []
+  },
+  {
+    "country": "Mongolia",
+    "slug": "mongolia",
+    "leagues": []
+  },
+  {
+    "country": "Moldova",
+    "slug": "moldova",
+    "leagues": []
+  },
+  {
+    "country": "Mozambique",
+    "slug": "mozambique",
+    "leagues": []
+  },
+  {
+    "country": "Morocco",
+    "slug": "morocco",
+    "leagues": []
+  },
+  {
+    "country": "Montenegro",
+    "slug": "montenegro",
+    "leagues": []
+  },
+  {
+    "country": "Myanmar",
+    "slug": "myanmar",
+    "leagues": []
+  },
+  {
+    "country": "Netherlands",
+    "slug": "netherlands",
+    "leagues": []
+  },
+  {
+    "country": "Nicaragua",
+    "slug": "nicaragua",
+    "leagues": []
+  },
+  {
+    "country": "Niger",
+    "slug": "niger",
+    "leagues": []
+  },
+  {
+    "country": "New Zealand",
+    "slug": "new-zealand",
+    "leagues": []
+  },
+  {
+    "country": "Nigeria",
+    "slug": "nigeria",
+    "leagues": []
+  },
+  {
+    "country": "Northern Ireland",
+    "slug": "northern-ireland",
+    "leagues": []
+  },
+  {
+    "country": "North Macedonia",
+    "slug": "north-macedonia",
+    "leagues": []
+  },
+  {
+    "country": "Norway",
+    "slug": "norway",
+    "leagues": []
+  },
+  {
+    "country": "Oman",
+    "slug": "oman",
+    "leagues": []
+  },
+  {
+    "country": "Palestine",
+    "slug": "palestine",
+    "leagues": []
+  },
+  {
+    "country": "Panama",
+    "slug": "panama",
+    "leagues": []
+  },
+  {
+    "country": "Paraguay",
+    "slug": "paraguay",
+    "leagues": []
+  },
+  {
+    "country": "Peru",
+    "slug": "peru",
+    "leagues": []
+  },
+  {
+    "country": "Pakistan",
+    "slug": "pakistan",
+    "leagues": []
+  },
+  {
+    "country": "Philippines",
+    "slug": "philippines",
+    "leagues": []
+  },
+  {
+    "country": "Poland",
+    "slug": "poland",
+    "leagues": []
+  },
+  {
+    "country": "Portugal",
+    "slug": "portugal",
+    "leagues": []
+  },
+  {
+    "country": "Qatar",
+    "slug": "qatar",
+    "leagues": []
+  },
+  {
+    "country": "Republic of the Congo",
+    "slug": "republic-of-the-congo",
+    "leagues": []
+  },
+  {
+    "country": "Russia",
+    "slug": "russia",
+    "leagues": []
+  },
+  {
+    "country": "Romania",
+    "slug": "romania",
+    "leagues": []
+  },
+  {
+    "country": "Rwanda",
+    "slug": "rwanda",
+    "leagues": []
+  },
+  {
+    "country": "Saudi Arabia",
+    "slug": "saudi-arabia",
+    "leagues": []
+  },
+  {
+    "country": "San Marino",
+    "slug": "san-marino",
+    "leagues": []
+  },
+  {
+    "country": "Senegal",
+    "slug": "senegal",
+    "leagues": []
+  },
+  {
+    "country": "Scotland",
+    "slug": "scotland",
+    "leagues": []
+  },
+  {
+    "country": "Seychelles",
+    "slug": "seychelles",
+    "leagues": []
+  },
+  {
+    "country": "Serbia",
+    "slug": "serbia",
+    "leagues": []
+  },
+  {
+    "country": "Sierra Leone",
+    "slug": "sierra-leone",
+    "leagues": []
+  },
+  {
+    "country": "Singapore",
+    "slug": "singapore",
+    "leagues": []
+  },
+  {
+    "country": "Slovenia",
+    "slug": "slovenia",
+    "leagues": []
+  },
+  {
+    "country": "Somalia",
+    "slug": "somalia",
+    "leagues": []
+  },
+  {
+    "country": "South Africa",
+    "slug": "south-africa",
+    "leagues": []
+  },
+  {
+    "country": "Slovakia",
+    "slug": "slovakia",
+    "leagues": []
+  },
+  {
+    "country": "South Korea",
+    "slug": "south-korea",
+    "leagues": []
+  },
+  {
+    "country": "Spain",
+    "slug": "spain",
+    "leagues": []
+  },
+  {
+    "country": "Sri Lanka",
+    "slug": "sri-lanka",
+    "leagues": []
+  },
+  {
+    "country": "Suriname",
+    "slug": "suriname",
+    "leagues": []
+  },
+  {
+    "country": "Sudan",
+    "slug": "sudan",
+    "leagues": []
+  },
+  {
+    "country": "Sweden",
+    "slug": "sweden",
+    "leagues": []
+  },
+  {
+    "country": "Syria",
+    "slug": "syria",
+    "leagues": []
+  },
+  {
+    "country": "Taiwan",
+    "slug": "taiwan",
+    "leagues": []
+  },
+  {
+    "country": "Switzerland",
+    "slug": "switzerland",
+    "leagues": []
+  },
+  {
+    "country": "Tajikistan",
+    "slug": "tajikistan",
+    "leagues": []
+  },
+  {
+    "country": "Tanzania",
+    "slug": "tanzania",
+    "leagues": []
+  },
+  {
+    "country": "Togo",
+    "slug": "togo",
+    "leagues": []
+  },
+  {
+    "country": "Tunisia",
+    "slug": "tunisia",
+    "leagues": []
+  },
+  {
+    "country": "Thailand",
+    "slug": "thailand",
+    "leagues": []
+  },
+  {
+    "country": "Trinidad and Tobago",
+    "slug": "trinidad-and-tobago",
+    "leagues": []
+  },
+  {
+    "country": "Turkmenistan",
+    "slug": "turkmenistan",
+    "leagues": []
+  },
+  {
+    "country": "Uganda",
+    "slug": "uganda",
+    "leagues": []
+  },
+  {
+    "country": "Turkey",
+    "slug": "turkey",
+    "leagues": []
+  },
+  {
+    "country": "United Arab Emirates",
+    "slug": "united-arab-emirates",
+    "leagues": []
+  },
+  {
+    "country": "Ukraine",
+    "slug": "ukraine",
+    "leagues": []
+  },
+  {
+    "country": "Uruguay",
+    "slug": "uruguay",
+    "leagues": []
+  },
+  {
+    "country": "USA",
+    "slug": "usa",
+    "leagues": []
+  },
+  {
+    "country": "Venezuela",
+    "slug": "venezuela",
+    "leagues": []
+  },
+  {
+    "country": "Uzbekistan",
+    "slug": "uzbekistan",
+    "leagues": []
+  },
+  {
+    "country": "Vietnam",
+    "slug": "vietnam",
+    "leagues": []
+  },
+  {
+    "country": "Wales",
+    "slug": "wales",
+    "leagues": []
+  },
+  {
+    "country": "Zambia",
+    "slug": "zambia",
+    "leagues": []
+  },
+  {
+    "country": "Zimbabwe",
+    "slug": "zimbabwe",
+    "leagues": []
+  },
+  {
+    "country": "Yemen",
+    "slug": "yemen",
+    "leagues": []
+  }
+]
