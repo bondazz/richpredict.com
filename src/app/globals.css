@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.cdnfonts.com/css/klapt');
+@import "tailwindcss";
 
 @theme {
   --color-brand-primary: #ffe438;
