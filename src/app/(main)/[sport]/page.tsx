@@ -11,11 +11,12 @@ import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches"
 import { Metadata } from 'next';
 
 interface Props {
-    params: { sport: string };
+    params: Promise<{ sport: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const sport = params.sport.charAt(0).toUpperCase() + params.sport.slice(1);
+    const { sport: sportParam } = await params;
+    const sport = sportParam.charAt(0).toUpperCase() + sportParam.slice(1);
     return {
         title: `AI ${sport} Predictions & Betting Tips | RichPredict`,
         description: `Get the most accurate AI-powered ${sport} predictions, analytics, and betting tips. High-probability outcomes for all major ${sport} events.`,
@@ -23,7 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SportPage({ params }: Props) {
-    const sportSlug = params.sport.toLowerCase();
+    const { sport: sportParam } = await params;
+    const sportSlug = sportParam.toLowerCase();
     const sportName = sportSlug.charAt(0).toUpperCase() + sportSlug.slice(1);
 
     // Validate sport
