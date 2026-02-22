@@ -4,13 +4,15 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = (supabaseUrl && supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null as any;
 
 // Separate client for admin actions (uses service role key to bypass RLS)
 // Note: This will only be available on the server side
-export const supabaseAdmin = supabaseServiceKey
+export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
     ? createClient(supabaseUrl, supabaseServiceKey)
-    : supabase
+    : supabase;
 
 // Database types
 export type Region = {

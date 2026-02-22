@@ -2,14 +2,15 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { chromium } from 'playwright';
 
-export const runtime = 'nodejs'; // Playwright needs Node.js runtime, not Edge
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role for admin operations
-);
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     const { url, leagueId: initialLeagueId } = await req.json();
 
     const encoder = new TextEncoder();
