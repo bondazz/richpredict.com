@@ -17,6 +17,7 @@ import { Testimonials } from "@/components/Testimonials";
 
 import SidebarCountries from "@/components/SidebarCountries";
 import InnerAdBanner from "@/components/Ads/InnerAdBanner";
+import SidebarAd from "@/components/Ads/SidebarAd";
 import TopTicker from "@/components/layout/TopTicker";
 import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches";
 import { Flag } from "@/components/ui/Flag";
@@ -118,7 +119,9 @@ export default async function Home() {
                         <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
                     )}
 
-                    <div className="pt-4 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
+                    <SidebarAd />
+
+                    <div className="pt-2 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
 
                     <SidebarCountries countriesByRegion={countriesByRegion} regionOrder={regionOrder} />
                 </aside>
