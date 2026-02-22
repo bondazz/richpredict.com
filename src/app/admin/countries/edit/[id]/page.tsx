@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation';
 import { Globe, ArrowLeft, Save, Zap } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function EditCountryPage({ params }: { params: { id: string } }) {
+export default async function EditCountryPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+    const params = await paramsPromise;
     const cookieStore = await cookies();
     const session = cookieStore.get('admin_session');
 
