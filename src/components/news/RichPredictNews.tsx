@@ -44,16 +44,15 @@ export const RichPredictNews = ({ posts }: Props) => {
 
             {/* News Context */}
             <div className="relative bg-[var(--fs-header)] border-b border-black/10">
-                <div className="absolute inset-0 pointer-events-none border-x border-white/5 z-20" />
-                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10 p-4 gap-6 md:gap-0">
+                <div className="grid grid-cols-1 md:grid-cols-3 divide-y divide-white/10 md:divide-y-0 md:divide-x p-4 gap-4 md:gap-0">
                     {posts.slice(0, 3).map((post) => (
                         <Link
                             key={post.id}
                             href={`/news/${post.slug}`}
-                            className="group relative flex flex-col md:px-5 first:pl-0 last:pr-0"
+                            className="group relative flex flex-row md:flex-col items-center md:items-start md:px-5 first:pl-0 last:pr-0 pt-4 first:pt-0 md:pt-0"
                         >
-                            {/* OVERLAY IMAGE CORNERS - Softened and Rounded */}
-                            <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-white/5 border border-white/10 shadow-lg mb-3">
+                            {/* IMAGE - Responsive Layout (Large on desktop, Small on mobile) */}
+                            <div className="relative w-[100px] md:w-full aspect-[16/9] overflow-hidden rounded-lg bg-white/5 border border-white/10 shadow-lg mb-0 md:mb-3 shrink-0">
                                 {post.image_url ? (
                                     <img
                                         src={post.image_url}
@@ -62,35 +61,39 @@ export const RichPredictNews = ({ posts }: Props) => {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-white/5 bg-gradient-to-br from-black/20 to-transparent">
-                                        <Newspaper size={40} strokeWidth={1} />
+                                        <Newspaper size={30} strokeWidth={1} />
                                     </div>
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90" />
-                                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-[var(--fs-yellow)] text-black text-[7px] font-black uppercase tracking-tighter rounded-sm z-20 shadow-lg">
+                                <div className="absolute top-1 right-1 px-1 py-0.5 bg-[var(--fs-yellow)] text-black text-[6px] font-black uppercase tracking-tighter rounded-sm z-20 shadow-lg">
                                     TRENDING
                                 </div>
                             </div>
 
-                            <h3 className="text-[12px] font-bold text-white/90 leading-tight group-hover:text-[var(--fs-yellow)] transition-colors line-clamp-2 h-9 md:h-10">
-                                {post.title}
-                            </h3>
+                            {/* TEXT CONTENT */}
+                            <div className="flex-1 ml-4 md:ml-0 flex flex-col justify-center">
+                                <h3 className="text-[11px] md:text-[12px] font-bold text-white/90 leading-tight group-hover:text-[var(--fs-yellow)] transition-colors line-clamp-3 md:line-clamp-2 md:h-10">
+                                    {post.title}
+                                </h3>
 
-                            <div className="flex items-center gap-2 mt-1.5 opacity-30 group-hover:opacity-100 transition-opacity">
-                                <span className="w-4 h-[1px] bg-white/30" />
-                                <span className="text-[8px] font-black text-white uppercase tracking-widest leading-none">MATCH_INSIGHT</span>
+                                <div className="flex items-center gap-2 mt-1.5 opacity-30 group-hover:opacity-100 transition-opacity">
+                                    <span className="w-4 h-[1px] bg-white/30" />
+                                    <span className="text-[7px] font-black text-white uppercase tracking-widest">MATCH_INSIGHT</span>
+                                </div>
                             </div>
                         </Link>
                     ))}
                 </div>
 
-                {/* Simplified Centered SEO Link - No bulky background */}
-                <div className="py-2.5 flex justify-center border-t border-white/5">
+                {/* Simplified Centered SEO Link */}
+                <div className="py-4 flex justify-center border-t border-white/5">
                     <Link
                         href="/news"
                         title="Go to RichPredict News"
-                        className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white hover:underline transition-all duration-300"
+                        className="text-[10px] font-bold text-white/40 hover:text-white transition-all duration-300 flex items-center gap-1 group/more"
                     >
-                        GO TO ALL NEWS
+                        <span className="underline underline-offset-4 decoration-white/0 group-hover/more:decoration-white transition-all">Go to News</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
                 </div>
             </div>
