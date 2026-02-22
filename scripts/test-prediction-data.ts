@@ -1,4 +1,4 @@
-import { getPredictionBySlug } from './src/lib/supabase';
+import { getPredictionBySlug } from '../src/lib/supabase';
 
 async function test() {
     const slug = 'everton-vs-manchester-utd-predictions-match-insight-tips'; // Example from screenshot
