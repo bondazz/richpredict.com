@@ -37,7 +37,7 @@ export default function SidebarAd() {
                     className="opacity-90 group-hover:opacity-100 transition-opacity"
                 />
             </div>
-            <div className="text-[6px] font-black text-white/10 uppercase tracking-[0.3em] mt-2 text-center">Advertisement</div>
+            <div className="text-[8px] font-medium text-white/50 uppercase tracking-widest mt-2 text-center">Advertisement</div>
         </div>
     );
 }
