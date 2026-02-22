@@ -21,21 +21,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { generateSportsEventSchema, generatePredictionSchema, generateBreadcrumbSchema } from "@/lib/schema";
-import { getPredictionBySlug, getPinnedLeagues, getCountriesByRegion, getPredictions } from "@/lib/supabase";
+import { getPredictionBySlug, getPinnedLeagues, getCountriesByRegion, getPredictions, getTeams, getFeaturedMatches } from "@/lib/supabase";
 import SidebarCountries from "@/components/SidebarCountries";
 import InnerAdBanner from "@/components/Ads/InnerAdBanner";
 import MatchPreview from "@/components/predictions/MatchPreview";
 import SEOContent from "@/components/predictions/SEOContent";
 import GlobalBettingChart from "@/components/predictions/GlobalBettingChart";
+import FeaturedMatches from "@/components/predictions/FeaturedMatches";
 import TitleSetter from "@/components/layout/TitleSetter";
-import { cn, generateSEOSlug } from "@/lib/utils";
+import { Flag } from "@/components/ui/Flag";
+import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     const match = await getPredictionBySlug(slug);
     if (!match) return { title: "Match Not Found" };
 
-    // H1 and SEO Title must end with 'Predictions' as requested
     const title = `${match.home_team} vs ${match.away_team} Predictions - Match Insight & Tips`;
     const description = `Professional AI football predictions for ${match.home_team} vs ${match.away_team}. Win probability, H2H statistics, and expert betting insights for today's match.`;
 
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             description,
         },
         alternates: {
-            canonical: `https://richpredict.com/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`,
+            canonical: `https://richpredict.com/predictions/${slug}`,
         },
     };
 }
@@ -60,28 +61,38 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
         notFound();
     }
 
-    // Custom human-like preview for the big derby
-    if (match.home_team === "Manchester United" && match.away_team === "Liverpool") {
-        match.analysis = "Let’s be real, when Manchester United and Liverpool face off, you can throw the form book right out the window. This isn't just another game on the calendar; it’s a collision of history, pride, and the biggest rivalry in English football. The atmosphere at Old Trafford is always electric, but there's a special kind of tension in the air when the Scousers come to town.\n\nUnited might have been a bit of a roller coaster lately, but at home, they’ve got this uncanny ability to turn into a completely different beast—especially in these high-stakes derbies. They play like a wounded lion, dangerous and unpredictable. On the flip side, Liverpool’s front line has been looking sharp, operating with that surgical precision we’ve come to expect. But this is the kind of game where tactics often take a backseat to pure grit and determination.\n\nEveryone is bracing for a goal-fest, and given the attacking firepower on both sides, it’s hard to imagine a quiet 0-0. This won't be a cagey game of chess; expect it to feel more like a heavyweight boxing match with both teams trading blows from the first whistle. My gut tells me neither side is going to back down, and we’ll be on the edge of our seats until the very last second. \n\nBottom line: grab your popcorn, because this is going to be an absolute thriller!";
-    }
-
-    // Fetch Sidebar Data
     let pinnedLeagues: any[] = [];
     let allCountries: any[] = [];
     let recentPredictions: any[] = [];
+    let allTeams: any[] = [];
+    let featuredMatches: any[] = [];
 
     try {
-        const [pinned, countries, recents] = await Promise.all([
+        const [pinned, countries, recents, teams, featured] = await Promise.all([
             getPinnedLeagues(),
             getCountriesByRegion(),
-            getPredictions(5)
+            getPredictions(5),
+            getTeams(),
+            getFeaturedMatches(match.leagues?.country_id, 10, match.category)
         ]);
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
         recentPredictions = recents || [];
+        allTeams = teams || [];
+        featuredMatches = featured || [];
     } catch (e) {
         console.error("Sidebar data fetch error:", e);
     }
+
+    const dbLogoMap: Record<string, string> = {};
+    allTeams.forEach(team => {
+        if (team.name && team.logo_url) {
+            const cleanName = team.name.toLowerCase().trim();
+            dbLogoMap[cleanName] = team.logo_url;
+            if (cleanName === 'manchester united') dbLogoMap['manchester utd'] = team.logo_url;
+            if (cleanName === 'manchester utd') dbLogoMap['manchester united'] = team.logo_url;
+        }
+    });
 
     const countriesByRegion = allCountries.reduce((acc: any, country: any) => {
         const regionObj = country.regions || country.region;
@@ -93,41 +104,28 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
 
     const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "Australia & Oceania"];
 
-    // Schema Logic (Google Bot friendly)
     const schemaMatch = {
         homeTeam: match.home_team,
         awayTeam: match.away_team,
         date: match.match_date?.split('T')[0],
-        time: match.match_time || "21:00",
-        prediction: { type: match.prediction, probability: 75 }
+        leagueName: match.league || "Global Football Match",
+        prediction: match.prediction,
+        odds: match.odds,
+        stadium: match.venue || "Global Stadium",
+        description: match.analysis || "Live match analysis and expert betting tips."
     };
 
     const breadcrumbItems = [
         { name: "Home", item: "https://richpredict.com" },
         { name: "Predictions", item: "https://richpredict.com/predictions" },
-        { name: match.league || "Leagues", item: "https://richpredict.com/predictions" },
-        { name: `${match.home_team} vs ${match.away_team} Predictions`, item: `https://richpredict.com/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}` }
+        { name: `${match.home_team} vs ${match.away_team}`, item: `https://richpredict.com/predictions/${slug}` }
     ];
 
     const sportsSchema = generateSportsEventSchema(schemaMatch);
     const predictionSchema = generatePredictionSchema(schemaMatch);
     const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
-    const getLogo = (name: string) => {
-        const logoMap: Record<string, string> = {
-            'Real Madrid': 'https://static.flashscore.com/res/image/data/W8mj7MDD.png',
-            'Barcelona': 'https://static.flashscore.com/res/image/data/nVtr6hT-GEKimEim.png',
-            'Arsenal': 'https://static.flashscore.com/res/image/data/ttVtr6hT-GEKimEim.png',
-            'Manchester City': 'https://static.flashscore.com/res/image/data/0GPhnpne-ttfpEDUq.png',
-            'Inter': 'https://static.flashscore.com/res/image/data/WOOHTbSq-KtCfnbWp.png',
-            'Juventus': 'https://static.flashscore.com/res/image/data/4pxypIS0-hpmw8K1h.png',
-            'Liverpool': 'https://static.flashscore.com/res/image/data/Gr0cGteM-KCp4zq5F.png',
-            'Manchester United': 'https://static.flashscore.com/res/image/data/nwSRlyWg-h2pPXz3k.png',
-            'Bayern Munich': 'https://static.flashscore.com/res/image/data/xSfDCO76-WrjrBuU2.png',
-            'Dortmund': 'https://static.flashscore.com/res/image/data/nP1i5US1.png'
-        };
-        return logoMap[name] || `https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=001e28&textColor=ffe438`;
-    };
+    const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
     return (
         <div className="min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
@@ -137,163 +135,185 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
 
             <TitleSetter title={`${match.home_team} vs ${match.away_team} Predictions`} />
 
-            {/* Sub-Header Area: BACK TO FIXTURES / BREADCRUMBS */}
             <div className="bg-[#001e28] border-b border-white/5 py-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
                 <div className="max-w-[1240px] mx-auto w-full px-4 flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
                     <div className="flex gap-4 items-center">
-                        <Link href="/" className="text-[var(--fs-yellow)] flex items-center gap-1 hover:opacity-80 transition-opacity">
-                            <ChevronLeft size={14} /> BACK TO FIXTURES
+                        <Link href="/" className="flex items-center gap-1.5 text-white/40 hover:text-[var(--fs-yellow)] transition-colors">
+                            <ChevronLeft size={14} /> Back to Fixtures
                         </Link>
-                        <span className="opacity-20">/</span>
-                        <Link href="/predictions" className="opacity-40 hover:opacity-100 transition-opacity">
-                            {match.league || "PREMIER LEAGUE"}
-                        </Link>
-                        <span className="opacity-20">/</span>
-                        <span className="text-white/80">{match.home_team} vs {match.away_team} match predict</span>
-                    </div>
-                    <div className="flex gap-4 items-center opacity-40">
-                        <Star size={14} className="cursor-pointer hover:text-[var(--fs-yellow)] transition-colors" />
-                        <Share2 size={14} className="cursor-pointer hover:text-white transition-colors" />
+                        <div className="h-3 w-[1px] bg-white/10" />
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="text-white/20">Predictions</span>
+                            <span className="text-white/10">/</span>
+                            <span className="text-white/80 truncate max-w-[100px] md:max-w-none">{match.league}</span>
+                            <span className="text-white/10">/</span>
+                            <span className="text-[var(--fs-yellow)]">{match.home_team} vs {match.away_team}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <main className="max-w-[1240px] mx-auto w-full px-2 py-4 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-4">
-
-                {/* LEFT SIDEBAR */}
+            <main className="max-w-[1240px] mx-auto w-full px-2 py-6 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-6">
                 <aside className="hidden lg:flex flex-col space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto pr-2 scrollbar-hide">
                     <div className="text-[9px] font-black text-white/50 uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
-                    {pinnedLeagues.map((league: any, i) => (
-                        <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80">
-                            <span className="text-[10px] font-extrabold uppercase truncate group-hover:text-white">{league.name}</span>
+                    {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80"
+                            title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
+                        >
+                            {league.countries?.flag_url && (
+                                <img src={league.countries.flag_url} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] opacity-80 group-hover:opacity-100" />
+                            )}
+                            <span className="text-[10px] font-medium truncate group-hover:text-white transition-colors">{league.name}</span>
                         </div>
-                    ))}
-                    <div className="pt-4 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2">Countries</div>
+                    )) : (
+                        <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
+                    )}
+                    <div className="pt-4 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
                     <SidebarCountries countriesByRegion={countriesByRegion} regionOrder={regionOrder} />
                 </aside>
 
-                {/* MAIN CONTENT */}
-                <div className="space-y-4 min-w-0">
+                <div className="space-y-6">
                     <InnerAdBanner />
 
-                    {/* Match Result Display */}
-                    <div className="bg-[var(--fs-header)] rounded-sm border border-white/5 overflow-hidden shadow-2xl relative">
-                        <div className="bg-black/20 border-b border-white/5 px-4 py-2 flex justify-between items-center">
-                            <div className="flex items-center gap-2 text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">
-                                <Trophy size={10} className="text-[var(--fs-yellow)]" />
-                                {match.league}
-                            </div>
-                            <div className="text-[8px] font-black text-[var(--fs-yellow)] uppercase tracking-[0.2em] bg-[var(--fs-yellow)]/5 px-2 py-0.5 rounded-sm">
-                                NODE_STABLE
+                    <div className="rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden group">
+                        <div className="bg-[#0b242e]/80 backdrop-blur-xl px-6 py-3 border-b border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                {match.leagues?.countries?.code ? (
+                                    <Flag
+                                        code={match.leagues.countries.code}
+                                        className="w-[18px] h-[12px] rounded-[1px] shadow-sm flex-shrink-0"
+                                    />
+                                ) : match.leagues?.countries?.flag_url && (
+                                    <img
+                                        src={match.leagues.countries.flag_url}
+                                        alt=""
+                                        className="w-[18px] h-[12px] object-cover rounded-[1px] flex-shrink-0"
+                                    />
+                                )}
+                                <div className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md flex items-center">
+                                    {match.leagues?.countries?.name && (
+                                        <span className="text-white/40 font-black uppercase text-[10px] mr-1.5">{match.leagues.countries.name}:</span>
+                                    )}
+                                    {match.league}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="p-6 md:p-10 relative overflow-hidden">
-                            {/* Decorative background element */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[120%] bg-gradient-to-r from-transparent via-[var(--fs-yellow)]/5 to-transparent -rotate-12 pointer-events-none" />
+                        <div className="bg-[#001e28] p-4 md:py-10 md:px-12 relative overflow-hidden flex flex-col items-center">
+                            {/* Premium Intelligence Background Pattern */}
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
 
-                            <div className="grid grid-cols-3 items-center relative z-10">
-                                <div className="flex flex-col items-center text-center space-y-5">
-                                    <div className="relative group">
-                                        <div className="absolute -inset-2 bg-gradient-to-b from-[var(--fs-yellow)]/20 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <img src={getLogo(match.home_team)} alt={match.home_team} className="w-16 h-16 md:w-28 md:h-28 object-contain relative z-10 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]" />
+                            {/* Soft Corner Glows */}
+                            <div className="absolute top-0 left-0 w-80 h-80 bg-[var(--fs-yellow)]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                            <div className="absolute bottom-0 right-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
+
+                            <div className="max-w-4xl w-full flex items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 relative z-10">
+                                {/* Home Team */}
+                                <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 flex-1 min-w-0">
+                                    <div className="relative">
+                                        <img src={getLogo(match.home_team)} alt={match.home_team} className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 object-contain relative z-10 drop-shadow-2xl" referrerPolicy="no-referrer" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <h2 className="text-[10px] md:text-lg font-black uppercase text-white tracking-widest leading-none font-outfit">{match.home_team}</h2>
-                                    </div>
+                                    <h2 className="text-[9px] sm:text-xs md:text-xl font-black uppercase text-white tracking-tighter leading-none font-outfit truncate w-full px-1">{match.home_team}</h2>
                                 </div>
 
-                                <div className="flex flex-col items-center justify-center space-y-4">
-                                    <div className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em] font-mono whitespace-nowrap">
-                                        DATAGRAM: {match.match_date?.split('T')[0]}
+                                {/* Center Signal Cluster */}
+                                <div className="flex flex-col items-center justify-center space-y-3 md:space-y-6 flex-shrink-0">
+                                    {/* Consolidated Date & Time */}
+                                    <div className="flex items-center gap-1.5 md:gap-3 bg-white/5 border border-white/5 px-2 md:px-4 py-1 md:py-1.5 rounded-full">
+                                        <div className="flex items-center gap-1 md:gap-1.5">
+                                            <Calendar size={8} className="text-[var(--fs-yellow)] md:w-2.5 md:h-2.5" />
+                                            <span className="text-[7px] md:text-[9px] font-black text-white/60 font-mono">{match.match_date?.split('T')[0]}</span>
+                                        </div>
+                                        <div className="w-[1px] h-2 md:h-3 bg-white/10" />
+                                        <div className="flex items-center gap-1 md:gap-1.5">
+                                            <Clock size={8} className="text-[var(--fs-yellow)] md:w-2.5 md:h-2.5" />
+                                            <span className="text-[7px] md:text-[9px] font-black text-white/60 font-mono">{match.match_time || "21:00"}</span>
+                                        </div>
                                     </div>
 
-                                    <div className="text-3xl md:text-5xl font-black italic text-white/5 font-outfit select-none leading-none tracking-tighter">VS</div>
+                                    {/* Refined Prediction Chip */}
+                                    <div className="relative max-w-[100px] sm:max-w-[150px] md:max-w-[200px] w-full">
+                                        <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--fs-yellow)]/10 to-cyan-500/10 rounded-lg md:rounded-xl opacity-50" />
+                                        <div className="relative bg-[#0b242e] border border-white/10 p-1.5 md:p-4 rounded-lg md:rounded-xl flex flex-col items-center gap-1 md:gap-3 shadow-2xl overflow-hidden">
+                                            <div className="absolute top-0 right-0 text-[10px] md:text-[18px] font-black text-white/5 -mr-1 -mt-1 md:-mr-2 md:-mt-2 italic select-none">AI</div>
 
-                                    {/* THE MATCH SIGNAL BLOCK */}
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="relative">
-                                            {/* Subtle stationary glow */}
-                                            <div className="absolute -inset-4 bg-[var(--fs-yellow)]/5 rounded-full blur-2xl pointer-events-none" />
-
-                                            <div className="bg-[#001e28]/60 backdrop-blur-md border border-white/5 px-6 py-3 rounded-sm flex flex-col items-center gap-1.5 relative z-10 min-w-[150px] shadow-2xl">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex items-center justify-center size-5 bg-[var(--fs-yellow)]/10 rounded-full">
-                                                        <Zap size={10} className="text-[var(--fs-yellow)] fill-[var(--fs-yellow)]" />
-                                                    </div>
-                                                    <span className="text-[11px] md:text-sm font-black text-white uppercase tracking-wider">{match.prediction}</span>
+                                            <div className="flex items-center gap-1 md:gap-2">
+                                                <div className="size-3 md:size-6 bg-[var(--fs-yellow)] rounded md:rounded-lg flex items-center justify-center">
+                                                    <Zap size={8} className="text-black fill-black md:w-3 md:h-3" />
                                                 </div>
+                                                <span className="text-[8px] sm:text-xs md:text-base font-black text-white uppercase tracking-tight whitespace-nowrap">{match.prediction}</span>
+                                            </div>
 
-                                                <div className="flex items-center gap-3 w-full mt-1.5">
-                                                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-[var(--fs-yellow)] shadow-[0_0_10px_rgba(255,228,56,0.5)]"
-                                                            style={{ width: match.confidence || '82%' }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-[var(--fs-yellow)] font-mono">{match.confidence || "82%"}</span>
+                                            <div className="w-full space-y-0.5 md:space-y-1 hidden sm:block">
+                                                <div className="flex justify-between items-center text-[6px] md:text-[8px] font-black text-white/40 uppercase">
+                                                    <span>Signal</span>
+                                                    <span className="text-[var(--fs-yellow)]">{match.confidence || "82%"}</span>
                                                 </div>
-
-                                                <div className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] mt-1 border-t border-white/5 w-full pt-1.5 text-center">
-                                                    AI_QUANTUM_SIGNAL
+                                                <div className="h-0.5 md:h-1 bg-white/5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-[var(--fs-yellow)] to-amber-400"
+                                                        style={{ width: match.confidence || '82%' }}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="bg-black/40 px-3 py-1 rounded-sm border border-white/5">
-                                            <span className="text-[9px] font-bold text-white/40 font-mono tracking-[0.2em]">{match.match_time || "21:00"}</span>
-                                        </div>
                                     </div>
+
+                                    <div className="text-xs md:text-4xl font-black italic text-white/[0.03] font-outfit select-none pointer-events-none">VS</div>
                                 </div>
 
-                                <div className="flex flex-col items-center text-center space-y-5">
-                                    <div className="relative group">
-                                        <div className="absolute -inset-2 bg-gradient-to-b from-[var(--fs-yellow)]/20 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <img src={getLogo(match.away_team)} alt={match.away_team} className="w-16 h-16 md:w-28 md:h-28 object-contain relative z-10 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]" />
+                                {/* Away Team */}
+                                <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 flex-1 min-w-0">
+                                    <div className="relative">
+                                        <img src={getLogo(match.away_team)} alt={match.away_team} className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 object-contain relative z-10 drop-shadow-2xl" referrerPolicy="no-referrer" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <h2 className="text-[10px] md:text-lg font-black uppercase text-white tracking-widest leading-none font-outfit">{match.away_team}</h2>
-                                    </div>
+                                    <h2 className="text-[9px] sm:text-xs md:text-xl font-black uppercase text-white tracking-tighter leading-none font-outfit truncate w-full px-1">{match.away_team}</h2>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* EXPANDABLE PREVIEW MODULE */}
                     <MatchPreview content={match.analysis} />
 
-                    {/* STATS MODULES */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <section className="bg-[var(--fs-header)] border border-white/5 rounded-sm p-6 space-y-6 relative overflow-hidden">
-                            <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-white">
+                            {/* Inner Overlay Glow */}
+                            <div className="absolute -top-10 -left-10 w-32 h-32 bg-[var(--fs-yellow)]/5 rounded-full blur-3xl pointer-events-none" />
+
+                            <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-white relative z-10">
                                 <Zap className="w-4 h-4 text-[var(--fs-yellow)] fill-[var(--fs-yellow)]" /> Probability Matrix
                             </h3>
-                            <div className="space-y-4">
+                            <div className="space-y-4 relative z-10">
                                 <div className="flex justify-between items-end">
                                     <span className="text-[10px] font-black uppercase text-white/30 italic">Signal Confidence</span>
-                                    <span className="text-3xl font-black text-[var(--fs-yellow)] font-mono">75.4%</span>
+                                    <span className="text-3xl font-black text-[var(--fs-yellow)] font-mono">{match.confidence || '75%'}</span>
                                 </div>
                                 <div className="h-2 bg-white/5 rounded-full overflow-hidden flex gap-1">
-                                    <div className="h-full bg-[var(--fs-yellow)]" style={{ width: '45%' }} />
-                                    <div className="h-full bg-white/10" style={{ width: '25%' }} />
-                                    <div className="h-full bg-[var(--fs-yellow)] opacity-40" style={{ width: '30%' }} />
+                                    <div className="h-full bg-[var(--fs-yellow)]" style={{ width: `${match.dist_home || 45}%` }} />
+                                    <div className="h-full bg-white/10" style={{ width: `${match.dist_draw || 25}%` }} />
+                                    <div className="h-full bg-[var(--fs-yellow)] opacity-40" style={{ width: `${match.dist_away || 30}%` }} />
                                 </div>
                                 <div className="flex justify-between text-[8px] font-bold text-white/20 uppercase tracking-tighter">
-                                    <span>Home (45%)</span>
-                                    <span>Neutral (25%)</span>
-                                    <span>Away (30%)</span>
+                                    <span>{match.home_team} ({match.dist_home || 45}%)</span>
+                                    <span>Draw ({match.dist_draw || 25}%)</span>
+                                    <span>{match.away_team} ({match.dist_away || 30}%)</span>
                                 </div>
                             </div>
                         </section>
 
-                        <section className="bg-[var(--fs-header)] border border-white/5 rounded-sm p-6 grid grid-cols-2 gap-3">
+                        <section className="bg-[var(--fs-header)] border border-white/5 rounded-sm p-6 grid grid-cols-2 gap-3 relative overflow-hidden">
+                            {/* Inner Overlay Glow */}
+                            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
                             {[
                                 { label: 'Attacking_Index', val: '8.4', icon: TrendingUp },
                                 { label: 'Defense_Node', val: '6.9', icon: ShieldCheck },
                                 { label: 'Market_Delta', val: 'High', icon: Activity },
                                 { label: 'Accuracy_Bias', val: 'Verify', icon: Target },
                             ].map((m, i) => (
-                                <div key={i} className="bg-black/20 p-4 rounded-sm border border-white/5 flex flex-col items-center justify-center text-center space-y-2 group hover:border-[var(--fs-yellow)]/30 transition-all">
+                                <div key={i} className="bg-black/20 p-4 rounded-sm border border-white/5 flex flex-col items-center justify-center text-center space-y-2 group hover:border-[var(--fs-yellow)]/30 transition-all relative z-10">
                                     <m.icon size={16} className="text-[var(--fs-yellow)]" />
                                     <div className="space-y-0.5">
                                         <p className="text-[8px] font-black uppercase text-white/20 whitespace-nowrap">{m.label}</p>
@@ -304,14 +324,11 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                         </section>
                     </div>
 
-                    {/* GLOBAL BETTING VOLUME CHART */}
                     <GlobalBettingChart match={match} />
-
-                    {/* AUTO-GENERATED SEO CONTENT SECTION */}
+                    <FeaturedMatches matches={featuredMatches} dbLogoMap={dbLogoMap} />
                     <SEOContent match={match} />
                 </div>
 
-                {/* RIGHT SIDEBAR */}
                 <aside className="hidden xl:flex flex-col space-y-6">
                     <div className="bg-[#001e28] border border-[var(--fs-yellow)]/20 rounded-xl p-6 shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--fs-yellow)]/10 rounded-full blur-[60px] group-hover:bg-[var(--fs-yellow)]/20 transition-colors duration-700" />

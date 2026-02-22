@@ -1,204 +1,305 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
-import { Facebook, Twitter, Instagram, Youtube, Smartphone } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Facebook, Twitter, Instagram, Zap } from "lucide-react";
+import type { Prediction, BlogPost } from "@/lib/supabase";
 
-export default function Footer() {
+interface FooterProps {
+    footballPredictions?: Prediction[];
+    tennisPredictions?: Prediction[];
+    latestNews?: BlogPost[];
+}
+
+const FOOTBALL_TIPS_OPTIONS = [
+    "Today's Football Tips",
+    "Tomorrow's Football Tips",
+    "Premier League Tips",
+    "Accumulator Tips",
+    "Correct Score Tips",
+    "Today's BTTS Tips",
+    "Tomorrow's BTTS Tips",
+    "Premier League BTTS Tips",
+    "Championship BTTS Tips",
+    "La Liga BTTS Tips",
+    "Today's Over 2.5 Tips",
+    "Tomorrow's Over 2.5 Tips",
+    "EPL Over 2.5 Tips",
+    "Championship Over 2.5 Tips",
+    "Bundesliga Over 2.5 Tips",
+];
+
+const QUICK_TIPS = [
+    "Accumulator Tips",
+    "Both Teams To Score Tips",
+    "Correct Score Tips",
+    "Bet of the Day Tips",
+    "Lay of the Day Tips",
+    "Daily Treble Tips",
+    "In-Play Tips",
+];
+
+export default function Footer({ footballPredictions = [], tennisPredictions = [], latestNews = [] }: FooterProps) {
+    const [randomFootballTips, setRandomFootballTips] = React.useState<string[]>([]);
+
+    React.useEffect(() => {
+        // Generate 8 random football tips only on client to avoid hydration mismatch
+        const random = [...FOOTBALL_TIPS_OPTIONS].sort(() => 0.5 - Math.random()).slice(0, 8);
+        setRandomFootballTips(random);
+    }, []);
+
+    const socialLinks = [
+        { id: "fb", label: "Facebook", href: "https://facebook.com/richpredict" },
+        { id: "tw", label: "X", href: "https://twitter.com/richpredict" },
+        { id: "in", label: "Instagram", href: "https://instagram.com/richpredict" },
+        { id: "tiktok", label: "TikTok", href: "https://tiktok.com/@richpredict" },
+    ];
+
+    const utilityLinks = [
+        { label: "Terms of Use", href: "/terms" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "GDPR and Journalism", href: "/gdpr" },
+        { label: "Impressum", href: "/impressum" },
+        { label: "Advertise", href: "/advertise" },
+        { label: "Contact", href: "/contact" },
+        { label: "Mobile", href: "/mobile" },
+        { label: "Live Scores", href: "/" },
+        { label: "Recommended Sites", href: "/recommended" },
+        { label: "FAQ", href: "/faq" },
+        { label: "Audio", href: "/audio" }
+    ];
+
     return (
-        <footer className="bg-[#00141e] border-t border-white/5 pt-12 pb-6 mt-auto">
-            <div className="max-w-[1240px] mx-auto w-full px-4">
+        <footer className="footerContainer bg-[#000a0f] border-t border-white/5 pt-16 relative overflow-hidden">
+            <div className="footerContainer__content max-w-[1240px] mx-auto px-6 relative z-10">
 
-                {/* 1. SEO Text Section (Collapsed style) */}
-                <div className="mb-12 border-b border-white/5 pb-8">
-                    <h2 className="text-[11px] font-black text-white uppercase tracking-widest mb-4">
-                        RichPredict - The World's Best AI Sports Predictions
-                    </h2>
-                    <p className="text-[10px] sm:text-[11px] text-[var(--fs-text-dim)] leading-relaxed">
-                        RichPredict offers the most accurate football predictions, tennis tips, and basketball analytics driven by advanced AI algorithms.
-                        We cover over 100+ football leagues including the <span className="text-white cursor-pointer hover:underline">Premier League</span>,
-                        <span className="text-white cursor-pointer hover:underline"> Champions League</span>, <span className="text-white cursor-pointer hover:underline">La Liga</span>,
-                        and <span className="text-white cursor-pointer hover:underline">Serie A</span>.
-                        Our nodes analyze millions of data points to provide you with high-probability betting tips, live scores, and match previews.
-                        Whether you are looking for <span className="text-white cursor-pointer hover:underline">Today's Football Predictions</span> or
-                        <span className="text-white cursor-pointer hover:underline">Weekend Betting Tips</span>, RichPredict is your ultimate source for winning strategies.
-                    </p>
-                </div>
+                {/* 1. SEO FOOTER (Dynamic Sections) */}
+                <div className="seoFooter mb-16 pb-12 border-b border-white/5">
+                    <div className="seoFooter__categories grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
 
-                {/* 2. Main Links Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
-                    {/* Column 1 */}
-                    <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-[var(--fs-yellow)] pl-2">Football</h3>
-                        <ul className="space-y-2">
-                            {["Football News", "Premier League", "Champions League", "Europa League", "La Liga", "Serie A", "Bundesliga", "Ligue 1"].map(item => (
-                                <li key={item}>
-                                    <Link href="#" className="text-[10px] text-[var(--fs-text-dim)] hover:text-white transition-colors block">
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 2 */}
-                    <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-[#ff4646] pl-2">Tennis</h3>
-                        <ul className="space-y-2">
-                            {["Tennis News", "ATP Tour", "WTA Tour", "Australian Open", "French Open", "Wimbledon", "US Open", "Davis Cup"].map(item => (
-                                <li key={item}>
-                                    <Link href="#" className="text-[10px] text-[var(--fs-text-dim)] hover:text-white transition-colors block">
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 3 */}
-                    <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-[#ff8c00] pl-2">Basketball</h3>
-                        <ul className="space-y-2">
-                            {["Basketball News", "NBA", "EuroLeague", "ACB", "NBA Playoffs", "FIBA World Cup", "College Basketball"].map(item => (
-                                <li key={item}>
-                                    <Link href="#" className="text-[10px] text-[var(--fs-text-dim)] hover:text-white transition-colors block">
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 4 */}
-                    <div className="space-y-4">
-                        <h3 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-[#00b4ff] pl-2">Hockey</h3>
-                        <ul className="space-y-2">
-                            {["Hockey News", "NHL", "KHL", "SHL", "IIHF World Championship", "NHL Playoffs", "Stanley Cup"].map(item => (
-                                <li key={item}>
-                                    <Link href="#" className="text-[10px] text-[var(--fs-text-dim)] hover:text-white transition-colors block">
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 5 - Community / Trending */}
-                    <div className="space-y-4 col-span-2 md:col-span-4 lg:col-span-1">
-                        <h3 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-white pl-2">Trending</h3>
-                        <ul className="space-y-2">
-                            {["Erling Haaland", "Kylian Mbappé", "LeBron James", "Novak Djokovic", "Connor McDavid", "Manchester City", "Real Madrid"].map(item => (
-                                <li key={item}>
-                                    <Link href="#" className="text-[10px] text-[var(--fs-text-dim)] hover:text-white transition-colors block">
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                {/* 3. Bottom Utility Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-end border-t border-white/5 pt-10">
-
-                    {/* Brand & Links */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 flex items-center justify-center opacity-90">
-                                <svg viewBox="0 0 160 100" fill="currentColor" className="w-full h-full">
-                                    <g className="text-white">
-                                        <path d="M21.1 55.1C20.6 52.5 20.5 50 20.8 47.5L0.2 45.6C-0.2 49.9 0 54.2 0.8 58.6C1.6 63 2.9 67.2 4.7 71.1L23.4 62.4C22.4 60.1 21.6 57.7 21.1 55.1Z" />
-                                        <path d="M27.6 68.8L11.7 82.1C16.4 87.7 22.3 92.2 28.9 95.3L37.6 76.6C33.8 74.7 30.3 72.1 27.6 68.8Z" />
-                                        <path d="M55.1 78.9C52.5 79.4 49.9 79.5 47.5 79.2L45.7 99.8C50 100.2 54.3 100 58.7 99.2C60.1 98.9 61.6 98.6 63 98.3L57.6 78.3C56.8 78.5 55.9 78.7 55.1 78.9Z" />
-                                        <path d="M44.9 21.1C48.4 20.5 52 20.5 55.3 21.1L64.2 2C57 0 49.2 -0.6 41.3 0.8C21.6 4.3 6.6 19 1.7 37.2L21.7 42.6C24.6 31.9 33.3 23.3 44.9 21.2Z" />
-                                        <path d="M68.8 72.5L82.1 88.3C85.4 85.5 88.4 82.2 90.9 78.7L74 66.8C72.5 68.9 70.8 70.8 68.8 72.5Z" />
-                                        <path d="M99.8 45.6L79.2 47.4C79.4 49.1 79.4 50.8 79.2 52.5L99.8 54.3C100.1 51.5 100.1 48.6 99.8 45.6Z" />
-                                    </g>
-                                    <path d="M73.3 0L54.1 41.3L137.2 0Z" fill="var(--fs-yellow)" />
-                                </svg>
+                        {/* Football Predictions */}
+                        <div className="seoFooter__category">
+                            <h3 className="seoFooter__categoryTitle mb-5">
+                                <Link href="/football" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    FOOTBALL PREDICTIONS
+                                </Link>
+                            </h3>
+                            <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
+                                {footballPredictions.map((pred) => (
+                                    <div key={pred.id}>
+                                        <Link href={`/predictions/${pred.slug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                            {pred.home_team} - {pred.away_team}
+                                        </Link>
+                                    </div>
+                                ))}
+                                {footballPredictions.length === 0 && (
+                                    <div className="text-[11px] text-white/40 italic uppercase tracking-tighter">No predictions found</div>
+                                )}
                             </div>
-                            <span className="text-xl font-black tracking-tighter text-white uppercase font-[Klapt] leading-none">
-                                RICH<span className="text-[var(--fs-yellow)]">PREDICT</span>
+                        </div>
+
+                        {/* Tennis Predictions */}
+                        <div className="seoFooter__category">
+                            <h3 className="seoFooter__categoryTitle mb-5">
+                                <Link href="/tennis" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    TENNIS PREDICTIONS
+                                </Link>
+                            </h3>
+                            <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
+                                {tennisPredictions.map((pred) => (
+                                    <div key={pred.id}>
+                                        <Link href={`/predictions/${pred.slug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                            {pred.home_team} - {pred.away_team}
+                                        </Link>
+                                    </div>
+                                ))}
+                                {tennisPredictions.length === 0 && (
+                                    <div className="text-[11px] text-white/40 italic uppercase tracking-tighter">No predictions found</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sports News */}
+                        <div className="seoFooter__category">
+                            <h3 className="seoFooter__categoryTitle mb-5">
+                                <Link href="/news" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    SPORTS NEWS
+                                </Link>
+                            </h3>
+                            <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
+                                {latestNews.map((post) => (
+                                    <div key={post.id}>
+                                        <Link href={`/news/${post.slug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors line-clamp-1">
+                                            {post.title}
+                                        </Link>
+                                    </div>
+                                ))}
+                                {latestNews.length === 0 && (
+                                    <div className="text-[11px] text-white/40 italic uppercase tracking-tighter">No news found</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Football Tips (Random) */}
+                        <div className="seoFooter__category">
+                            <h3 className="seoFooter__categoryTitle mb-5">
+                                <Link href="/" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    FOOTBALL TIPS
+                                </Link>
+                            </h3>
+                            <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
+                                {randomFootballTips.map((tip, idx) => (
+                                    <div key={idx}>
+                                        <Link href="/" className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                            {tip}
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Quick Tips (Dofollow Home Links) */}
+                        <div className="seoFooter__category">
+                            <h3 className="seoFooter__categoryTitle mb-5">
+                                <Link href="/" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    QUICK TIPS
+                                </Link>
+                            </h3>
+                            <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
+                                {QUICK_TIPS.map((tip, idx) => (
+                                    <div key={idx}>
+                                        <Link href="/" rel="dofollow" className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                            {tip}
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* 2. SELF PROMO SECTION */}
+                <div className="selfPromo grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
+                    {/* Brand Info */}
+                    <div className="selfPromo__box selfPromo__box--project lg:col-span-6">
+                        <h4 className="selfPromo__boxTitle text-[11px] font-black text-white uppercase tracking-widest mb-6 px-3 border-l-2 border-[var(--fs-yellow)]">
+                            RichPredict.com
+                        </h4>
+                        <div className="selfPromo__boxContent">
+                            <div className="selfPromo__boxContent--links flex flex-wrap gap-x-6 gap-y-3">
+                                {utilityLinks.map(item => (
+                                    <div key={item.label} className="selfPromo__boxItemWrapper">
+                                        <Link href={item.href} className="text-[10px] font-bold text-white hover:text-[var(--fs-yellow)] uppercase tracking-wider transition-colors">
+                                            {item.label}
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Social Section */}
+                    <div className="selfPromo__box selfPromo__box--social lg:col-span-3">
+                        <h4 className="selfPromo__boxTitle text-[11px] font-black text-white uppercase tracking-widest mb-6">
+                            Follow us
+                        </h4>
+                        <div className="selfPromo__boxContent flex flex-col gap-3">
+                            {socialLinks.map(soc => (
+                                <div key={soc.id} className="selfPromo__boxItemWrapper">
+                                    <Link href={soc.href} target="_blank" className="flex items-center gap-3 text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-all group">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[var(--fs-yellow)] group-hover:text-black transition-all">
+                                            <SocialIconById id={soc.id} />
+                                        </div>
+                                        <span className="uppercase tracking-tight">{soc.label}</span>
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Apps Section */}
+                    <div className="selfPromo__box selfPromo__box--apps lg:col-span-3">
+                        <div className="selfPromo__wrapper--texts space-y-2 mb-6">
+                            <h4 className="selfPromo__boxTitle text-[11px] font-black text-white uppercase tracking-widest">
+                                Mobile applications
+                            </h4>
+                            <p className="selfPromo__boxContent text-[11px] text-white leading-relaxed">
+                                Our mobile app is optimized for your phone. Download it for free!
+                            </p>
+                        </div>
+                        <div className="selfPromo__wrapper--stores flex flex-col gap-2.5">
+                            <StoreButton type="apple" />
+                            <StoreButton type="google" />
+                            <StoreButton type="huawei" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. CORE FOOTER (Legal & Copyright) */}
+                <div className="footer mt-10 pb-10 border-t border-white/5 pt-10">
+                    <div className="footer__content flex flex-col md:flex-row justify-between items-center gap-8">
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-white/40">
+                            <Link href="#" className="footer__link text-[10px] font-black text-white uppercase hover:text-[var(--fs-yellow)] transition-colors">
+                                Lite version
+                            </Link>
+                            <div className="footer__gambleResponsiblyLink text-[10px] font-black uppercase text-white">
+                                Gamble Responsibly. <Link href="#" className="text-white hover:underline">Gambling Therapy</Link>. 18+
+                            </div>
+                        </div>
+
+                        <div className="footer__copyright flex items-center gap-6">
+                            <div className="footer__copyrightText text-[10px] font-black uppercase text-white tracking-widest">
+                                Copyright © 2006-26 RichPredict.com
+                            </div>
+                            <span className="footer__privacyButton text-[10px] font-bold text-white cursor-pointer hover:text-[var(--fs-yellow)] uppercase border border-white/20 px-3 py-1 rounded-sm">
+                                Set privacy
                             </span>
                         </div>
-
-                        <ul className="flex flex-wrap gap-x-6 gap-y-2">
-                            {["Terms of Use", "Privacy Policy", "Advertising", "Contact", "Cookie Policy", "GDPR Compliance"].map(item => (
-                                <li key={item}>
-                                    <Link href="#" className="text-[10px] font-bold text-white/40 hover:text-white uppercase tracking-wider transition-colors">
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-
-                        <div className="flex gap-4">
-                            <SocialIcon Icon={Facebook} label="Facebook" />
-                            <SocialIcon Icon={Twitter} label="Twitter" />
-                            <SocialIcon Icon={Instagram} label="Instagram" />
-                            <SocialIcon Icon={Youtube} label="Youtube" />
-                        </div>
-                    </div>
-
-                    {/* App Download Section */}
-                    <div className="flex flex-col sm:flex-row items-center lg:justify-end gap-6 bg-white/5 rounded-xl p-4 lg:p-6 border border-white/5 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--fs-yellow)]/5 rounded-full blur-[40px] group-hover:bg-[var(--fs-yellow)]/10 transition-colors" />
-
-                        <div className="relative z-10 flex flex-col gap-3 text-center sm:text-left">
-                            <div className="space-y-0.5">
-                                <span className="text-[9px] font-black text-[var(--fs-yellow)] uppercase tracking-[0.2em]">Mobile Experience</span>
-                                <h4 className="text-base font-black text-white uppercase leading-tight">Download Our App</h4>
-                            </div>
-                            <p className="text-[10px] text-white/50 max-w-[200px]">Get real-time notifications and exclusive premium tips directly on your phone.</p>
-
-                            <div className="flex gap-2 justify-center sm:justify-start">
-                                <button className="bg-black border border-white/10 rounded px-2 py-1.5 flex items-center gap-1.5 hover:border-white/30 transition-colors" aria-label="Download on App Store">
-                                    <Smartphone size={16} className="text-white" />
-                                    <div className="text-left">
-                                        <div className="text-[6px] text-white/60 uppercase font-bold leading-none">Download on the</div>
-                                        <div className="text-[9px] text-white font-bold leading-none mt-0.5">App Store</div>
-                                    </div>
-                                </button>
-                                <button className="bg-black border border-white/10 rounded px-2 py-1.5 flex items-center gap-1.5 hover:border-white/30 transition-colors" aria-label="Get it on Google Play">
-                                    <Smartphone size={16} className="text-white" />
-                                    <div className="text-left">
-                                        <div className="text-[6px] text-white/60 uppercase font-bold leading-none">Get it on</div>
-                                        <div className="text-[9px] text-white font-bold leading-none mt-0.5">Google Play</div>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Pseudo-phone visual */}
-                        <div className="relative w-24 h-48 bg-black border-4 border-zinc-800 rounded-[1.5rem] shadow-2xl shrink-0 rotate-12 translate-y-4 group-hover:rotate-0 group-hover:translate-y-0 transition-all duration-500 hidden sm:block">
-                            <div className="absolute top-2 w-full flex justify-center"><div className="w-8 h-1 bg-zinc-800 rounded-full" /></div>
-                            <div className="absolute inset-1 top-4 bg-[var(--fs-bg)] rounded-[1rem] overflow-hidden flex flex-col items-center justify-center pt-4 opacity-50">
-                                <div className="w-full h-8 bg-zinc-800/50 mb-2" />
-                                <div className="w-[80%] h-2 bg-zinc-800/50 rounded-full mb-2" />
-                                <div className="w-[60%] h-2 bg-zinc-800/50 rounded-full" />
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                <div className="mt-12 pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-                    <p className="text-[9px] text-white/20 font-mono">
-                        © 2026 RICHPREDICT. ALL RIGHTS RESERVED.
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-white/20 uppercase font-bold">Gamble Responsibly 18+</span>
-                        <div className="w-6 h-6 rounded-full border border-white/10 flex items-center justify-center text-[8px] text-white/40 font-bold">18+</div>
-                    </div>
-                </div>
             </div>
+
+            {/* Visual Phone Mockup */}
+            <div className="footer__lazyLoadImage absolute -bottom-10 right-0 lg:right-40 w-[240px] opacity-10 pointer-events-none hidden lg:block">
+                <img
+                    src="https://static.flashscore.com/res/_fs/image/3_footer/mobile_screen.png"
+                    alt="Mobile Preview"
+                    width={240}
+                    height={300}
+                    loading="lazy"
+                    className="rotate-[-10deg] translate-y-10"
+                />
+            </div>
+
+            {/* Background Glow */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_bottom,rgba(255,228,56,0.02),transparent_70%)] pointer-events-none" />
         </footer>
     );
 }
 
-function SocialIcon({ Icon, label }: { Icon: any; label: string }) {
+function SocialIconById({ id }: { id: string }) {
+    if (id === 'fb') return <Facebook size={14} />;
+    if (id === 'tw') return <Twitter size={14} />;
+    if (id === 'in') return <Instagram size={14} />;
+    return <Zap size={14} />; // Default/TikTok fallback
+}
+
+function StoreButton({ type }: { type: 'apple' | 'google' | 'huawei' }) {
+    const urls = {
+        apple: "https://static.flashscore.com/res/_fs/image/9_stores/apple/en.svg",
+        google: "https://static.flashscore.com/res/_fs/image/9_stores/google/en.svg",
+        huawei: "https://static.flashscore.com/res/_fs/image/9_stores/huawei/en.svg",
+    };
+    const labels = {
+        apple: "Download on the App Store",
+        google: "Get it on Google Play",
+        huawei: "Explore it on AppGallery",
+    };
     return (
-        <a href="#" className="w-10 h-10 rounded bg-white/5 flex items-center justify-center text-white/40 hover:bg-[var(--fs-yellow)] hover:text-black transition-all" aria-label={label}>
-            <Icon size={16} />
-        </a>
+        <Link href="#" className="opacity-80 hover:opacity-100 transition-opacity" aria-label={labels[type]}>
+            <img src={urls[type]} alt={labels[type]} height={32} width={120} className="h-8 w-auto filter grayscale invert" loading="lazy" />
+        </Link>
     );
 }

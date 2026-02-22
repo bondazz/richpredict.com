@@ -2,8 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Separate client for admin actions (uses service role key to bypass RLS)
+// Note: This will only be available on the server side
+export const supabaseAdmin = supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey)
+    : supabase
 
 // Database types
 export type Region = {
@@ -35,6 +42,7 @@ export type Team = {
     id: string
     name: string
     country_id: string
+    league_id?: string
     logo_url: string
     stadium: string
 }
@@ -59,7 +67,8 @@ export type Prediction = {
     prediction: string
     odds: number
     match_date: string
-    league: string
+    league: string // Keep for backward compatibility
+    league_id?: string // New relational link
     status: string
     result: string
     slug: string
@@ -69,6 +78,21 @@ export type Prediction = {
     match_time: string
     category?: string
     is_premium?: boolean
+    // Global Distribution
+    dist_home?: number
+    dist_draw?: number
+    dist_away?: number
+    // Joined data
+    leagues?: {
+        name: string
+        logo_url: string
+        country_id: string
+        countries?: {
+            name: string
+            flag_url: string
+            code: string
+        }
+    }
 }
 
 // Helper functions
@@ -98,7 +122,7 @@ export const getPremiumPredictionsCount = async (sport: string) => {
 
     if (error) {
         // If column doesn't exist yet, return 0 or default
-        console.error("Error fetching premium count:", error);
+        console.warn("Error fetching premium count:", error.message || error);
         return 0;
     }
 
@@ -110,7 +134,18 @@ export const getPredictions = async (limit = 50, category?: string) => {
     if (category) {
         let query = supabase
             .from('predictions')
-            .select('*')
+            .select(`
+                *,
+                leagues (
+                    name,
+                    logo_url,
+                    countries (
+                        name,
+                        flag_url,
+                        code
+                    )
+                )
+            `)
             .order('match_date', { ascending: false })
             .limit(limit);
 
@@ -125,43 +160,49 @@ export const getPredictions = async (limit = 50, category?: string) => {
 
         const { data, error } = await query;
 
-        // If no error, or error is not about missing column, return result
+        // If no error, return result
         if (!error) return data as Prediction[];
 
-        // If error is "column does not exist" (42703), fallback to unfiltered (especially for Football)
-        if (error.code !== '42703') {
-            console.error('Error fetching filtered predictions:', error);
-            return [];
-        }
+        // If error is about the join (42703 or similar), fallback to simple select
+        console.warn('Falling back to simple select due to missing league_id link:', error.message);
     }
 
-    // Stage 2: Fallback to unfiltered query (or default query if no category/missing column)
+    // Stage 2: Fallback to simple query
     let query = supabase
         .from('predictions')
-        .select('*')
+        .select(`
+            *,
+            leagues (
+                name,
+                logo_url,
+                countries (
+                    name,
+                    flag_url,
+                    code
+                )
+            )
+        `)
         .order('match_date', { ascending: false })
         .limit(limit);
 
-    // Try to exclude premium even in fallback if possible, but keep it robust
-    // We will just do a simple select. If the initial query failed due to is_premium column not existing, this might also fail if we add it.
-    // However, if the error was 42703 (column does not exist), it's safer to just return whatever.
-    // BUT we want to hide premium.
-    // Let's assume the column exists now since user ran the SQL.
+    const { data: finalData, error: finalError } = await query;
 
-    // Actually, I should just stick to the main query being robust.
-    // If the first query fails, it returns empty array from that block IF error code is NOT 42703.
-    // If it falls through, it means either `category` was undefined OR error was 42703 (missing column).
-    // If missing column `category`, then `is_premium` might also be missing.
-    // So let's leave the fallback purely raw for safety. The user has added the columns.
+    if (finalError) {
+        // Absolute fallback if relational query fails entirely
+        const { data: rawData, error: rawError } = await supabase
+            .from('predictions')
+            .select('*')
+            .order('match_date', { ascending: false })
+            .limit(limit);
 
-    const { data, error } = await query;
-
-    if (error) {
-        console.error('Error fetching predictions:', error);
-        return [];
+        if (rawError) {
+            console.warn('Error fetching predictions even in absolute fallback:', rawError.message || rawError);
+            return [];
+        }
+        return rawData as Prediction[];
     }
 
-    return data as Prediction[];
+    return finalData as Prediction[];
 }
 
 export const getBlogPosts = async (limit = 6) => {
@@ -173,39 +214,118 @@ export const getBlogPosts = async (limit = 6) => {
         .limit(limit)
 
     if (error) {
-        console.error('Error fetching blog posts:', error)
+        // Handle common errors like missing table (42P01) or PostgREST missing rows (PGRST116)
+        // We log as warning instead of error to avoid triggering Next.js 15 dev error overlay
+        const isTableMissing = error.code === '42P01' || error.message?.includes('does not exist');
+
+        if (!isTableMissing) {
+            console.warn('Blog posts fetch notice:', error.message || 'Table might be empty or missing.');
+        }
+
         return []
     }
 
     return data as BlogPost[]
 }
 
-export const getPredictionBySlug = async (slug: string) => {
-    // 1. Try exact match (for backward compatibility and current DB state)
-    let { data, error } = await supabase
+export const getPredictionById = async (id: string | number) => {
+    const { data, error } = await supabase
         .from('predictions')
         .select('*')
-        .eq('slug', slug)
+        .eq('id', id)
         .single()
+
+    if (error) return null
+    return data
+}
+
+export const getPredictionBySlug = async (slug: string) => {
+    // 1. Try exact match
+    let { data, error } = await supabase
+        .from('predictions')
+        .select(`
+            *,
+            leagues (
+                name,
+                logo_url,
+                country_id,
+                countries (
+                    name,
+                    flag_url,
+                    code
+                )
+            )
+        `)
+        .eq('slug', slug)
+        .maybeSingle()
 
     if (!error && data) return data as Prediction
 
-    // 2. Try suffix match if slug looks like the new format
+    // 2. Try to parse SEO slug format: [home]-vs-[away]-predictions...-[suffix]
     const parts = slug.split('-')
-    const suffix = parts[parts.length - 1]
+    const previewIndex = parts.indexOf('previews')
 
-    const { data: suffixData, error: suffixError } = await supabase
+    // Extract suffix (usually a date or ID)
+    const suffix = previewIndex !== -1 ? parts.slice(previewIndex + 1).join('-') : parts[parts.length - 1]
+
+    // Extract home and away team names from the beginning of the slug
+    // Format is usually: home-name-vs-away-name-predictions...
+    const vsIndex = parts.indexOf('vs')
+    let homePart = ''
+    let awayPart = ''
+
+    if (vsIndex !== -1) {
+        homePart = parts.slice(0, vsIndex).join(' ')
+        // Find "predictions" to mark the end of the away team name
+        const predIndex = parts.indexOf('predictions')
+        if (predIndex !== -1) {
+            awayPart = parts.slice(vsIndex + 1, predIndex).join(' ')
+        }
+    }
+
+    let query = supabase
         .from('predictions')
-        .select('*')
-        .ilike('slug', `%-${suffix}`)
-        .single()
+        .select(`
+            *,
+            leagues (
+                name,
+                logo_url,
+                country_id,
+                countries (
+                    name,
+                    flag_url,
+                    code
+                )
+            )
+        `)
 
-    if (suffixError) {
-        console.error('Error fetching prediction by slug/suffix:', suffixError)
+    // We must match the suffix (date) AND either of the team names
+    if (homePart && awayPart) {
+        query = query.ilike('home_team', `%${homePart}%`).ilike('away_team', `%${awayPart}%`)
+    } else if (homePart) {
+        query = query.ilike('home_team', `%${homePart}%`)
+    }
+
+    // Also filter by suffix (date part)
+    query = query.ilike('slug', `%${suffix}%`)
+
+    const { data: results, error: searchError } = await query.limit(5)
+
+    if (searchError || !results || results.length === 0) {
+        if (searchError) console.warn('Error fetching prediction by lookup:', searchError.message || searchError);
         return null
     }
 
-    return suffixData as Prediction
+    // Try to find the best match amongst results
+    if (results.length > 1 && homePart) {
+        const bestMatch = results.find(r =>
+            r.home_team.toLowerCase().includes(homePart.toLowerCase()) ||
+            homePart.toLowerCase().includes(r.home_team.toLowerCase())
+        )
+        if (bestMatch) return bestMatch as Prediction
+    }
+
+    return results[0] as Prediction
 }
 
 export const getCountriesByRegion = async () => {
@@ -218,10 +338,21 @@ export const getCountriesByRegion = async () => {
     return data
 }
 
+export const getCountryById = async (id: string) => {
+    const { data, error } = await supabase
+        .from('countries')
+        .select('*, regions(name)')
+        .eq('id', id)
+        .single()
+
+    if (error) return null
+    return data
+}
+
 export const getPinnedLeagues = async () => {
     const { data, error } = await supabase
         .from('leagues')
-        .select('*, countries(name)')
+        .select('*, countries(name, flag_url)')
         .eq('is_pinned', true)
         .order('order_index', { ascending: true })
 
@@ -229,10 +360,75 @@ export const getPinnedLeagues = async () => {
     return data as League[]
 }
 
+export const getLeagues = async () => {
+    const { data, error } = await supabase
+        .from('leagues')
+        .select('*, countries(name)')
+        .order('name', { ascending: true })
+
+    if (error) return []
+    return data
+}
+
+export const getTeams = async () => {
+    let allTeams: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+        const { data, error } = await supabase
+            .from('teams')
+            .select(`
+                id,
+                name,
+                logo_url,
+                country_id,
+                league_id,
+                leagues (
+                    name
+                ),
+                countries (
+                    name
+                )
+            `)
+            .order('name', { ascending: true })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) {
+            console.error('Error fetching teams:', error);
+            return allTeams; // Return what we have so far
+        }
+
+        if (data && data.length > 0) {
+            allTeams = [...allTeams, ...data];
+            page++;
+            if (data.length < pageSize) hasMore = false;
+        } else {
+            hasMore = false;
+        }
+
+        // Safety break to prevent infinite loops (max 10k teams for now)
+        if (page > 10) hasMore = false;
+    }
+
+    return allTeams;
+}
+
 export const getAllPredictions = async (limit = 100) => {
     const { data, error } = await supabase
         .from('predictions')
-        .select('*')
+        .select(`
+            *,
+            leagues (
+                name,
+                logo_url,
+                countries (
+                    name,
+                    flag_url
+                )
+            )
+        `)
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -242,4 +438,49 @@ export const getAllPredictions = async (limit = 100) => {
     }
 
     return data as Prediction[]
+}
+
+export const getFeaturedMatches = async (countryId?: string, limit = 10, category?: string) => {
+    const today = new Date().toISOString().split('T')[0];
+
+    let query = supabase
+        .from('predictions')
+        .select(`
+            *,
+            leagues!inner (
+                name,
+                logo_url,
+                country_id,
+                countries (
+                    name,
+                    flag_url,
+                    code
+                )
+            )
+        `)
+        .gte('match_date', today)
+        .order('match_date', { ascending: true });
+
+    if (countryId) {
+        query = query.eq('leagues.country_id', countryId);
+    }
+
+    if (category) {
+        if (category.toLowerCase() === 'football') {
+            query = query.or(`category.ilike.Football,category.is.null`);
+        } else {
+            query = query.ilike('category', category);
+        }
+    }
+
+    const { data, error } = await query.limit(limit * 3);
+
+    if (error) {
+        console.error('Error fetching featured matches:', error);
+        return [];
+    }
+
+    // Randomize and slice
+    const shuffled = (data || []).sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, limit) as Prediction[];
 }

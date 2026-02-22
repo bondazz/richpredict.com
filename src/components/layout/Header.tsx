@@ -29,6 +29,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
 
     const getH1Text = () => {
         if (pathname === "/") return "AI Football Predictions, Results, EPL & Champions League";
+        if (pathname === "/recommended") return "Premium Partners & Resources";
         if (pathname.startsWith("/news")) return "Sports news, interviews, highlights, rumours, scores and statistics";
         if (pathname.startsWith("/predictions")) return "AI-Powered Football Predictions & Match Analytics";
 

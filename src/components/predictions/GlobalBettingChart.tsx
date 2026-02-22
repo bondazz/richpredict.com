@@ -12,11 +12,11 @@ export default function GlobalBettingChart({ match }: GlobalBettingChartProps) {
     const [totalBet, setTotalBet] = useState(0);
     const targetTotal = 1420500 + (Math.random() * 500000); // Simulated dynamic data
 
-    // Distribution percentages (simulated)
+    // Distribution percentages from database (with fallback)
     const distribution = {
-        home: 58,
-        draw: 22,
-        away: 20
+        home: match.dist_home || 45,
+        draw: match.dist_draw || 25,
+        away: match.dist_away || 30
     };
 
     useEffect(() => {

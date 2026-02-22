@@ -1,10 +1,18 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import 'flag-icons/css/flag-icons.min.css'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
-    title: 'RichPredict | AI Sports Predictions',
+    metadataBase: new URL('https://richpredict.com'),
+    title: {
+        default: 'RichPredict | AI Sports Predictions',
+        template: '%s | RichPredict'
+    },
     description: 'Advanced AI-powered sports predictions and betting tips.',
+    alternates: {
+        canonical: '/',
+    },
 }
 
 export default function RootLayout({

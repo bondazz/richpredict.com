@@ -35,7 +35,7 @@ export default function MatchPreview({ content }: MatchPreviewProps) {
                 isExpanded ? "max-h-[2000px] opacity-100" : "max-h-[120px] opacity-80 overflow-hidden"
             )}>
                 <div className="text-[12px] md:text-[13px] text-white/80 leading-relaxed font-medium space-y-6">
-                    {displayContent.split('\n\n').map((paragraph, idx) => (
+                    {displayContent.split(/\r?\n/).filter(p => p.trim() !== '').map((paragraph, idx) => (
                         <p key={idx} className={idx === 0 ? "first-letter:text-3xl first-letter:font-black first-letter:mr-2 first-letter:float-left first-letter:text-[var(--fs-yellow)]" : ""}>
                             {paragraph}
                         </p>

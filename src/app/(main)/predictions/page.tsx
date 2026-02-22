@@ -2,14 +2,15 @@ export const revalidate = 0;
 import { Metadata } from "next";
 import Link from "next/link";
 import { Zap, Trophy, Loader2, Star, ArrowRight, ChevronDown } from "lucide-react";
-import { cn, generateSEOSlug } from "@/lib/utils";
-import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, Prediction } from "@/lib/supabase";
+import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
+import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, Prediction, getTeams } from "@/lib/supabase";
 
 import { AIPredictTrust } from "@/components/AIPredictTrust";
 import { Testimonials } from "@/components/Testimonials";
 
 import SidebarCountries from "@/components/SidebarCountries";
 import InnerAdBanner from "@/components/Ads/InnerAdBanner";
+import { Flag } from "@/components/ui/Flag";
 
 export const metadata: Metadata = {
     title: "Football Predictions & AI Match Analytics | RICHPREDICT",
@@ -23,19 +24,36 @@ export default async function PredictionsPage() {
     let predictions: Prediction[] = [];
     let pinnedLeagues: any[] = [];
     let allCountries: any[] = [];
+    let allTeams: any[] = [];
 
     try {
-        const [preds, pinned, countries] = await Promise.all([
+        const [preds, pinned, countries, teams] = await Promise.all([
             getPredictions(100), // More for predictions page
             getPinnedLeagues(),
-            getCountriesByRegion()
+            getCountriesByRegion(),
+            getTeams()
         ]);
         predictions = preds || [];
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
+        allTeams = teams || [];
     } catch (e: any) {
         console.error("Supabase connection error:", e);
     }
+
+    // Build dynamic logo map from database teams
+    const dbLogoMap: Record<string, string> = {};
+    allTeams.forEach(team => {
+        if (team.name && team.logo_url) {
+            const cleanName = team.name.toLowerCase().trim();
+            dbLogoMap[cleanName] = team.logo_url;
+            // Handle common name variations
+            if (cleanName === 'manchester united') dbLogoMap['manchester utd'] = team.logo_url;
+            if (cleanName === 'manchester utd') dbLogoMap['manchester united'] = team.logo_url;
+        }
+    });
+
+    const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
     // Group predictions by league
     const groupedLeagues = predictions.reduce((acc: any, prediction: Prediction) => {
@@ -66,22 +84,6 @@ export default async function PredictionsPage() {
 
     const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "Australia & Oceania"];
 
-    const getLogo = (name: string) => {
-        const logoMap: Record<string, string> = {
-            'Real Madrid': 'https://static.flashscore.com/res/image/data/W8mj7MDD.png',
-            'Barcelona': 'https://static.flashscore.com/res/image/data/nVtr6hT-GEKimEim.png',
-            'Arsenal': 'https://static.flashscore.com/res/image/data/ttVtr6hT-GEKimEim.png',
-            'Manchester City': 'https://static.flashscore.com/res/image/data/0GPhnpne-ttfpEDUq.png',
-            'Inter': 'https://static.flashscore.com/res/image/data/WOOHTbSq-KtCfnbWp.png',
-            'Juventus': 'https://static.flashscore.com/res/image/data/4pxypIS0-hpmw8K1h.png',
-            'Liverpool': 'https://static.flashscore.com/res/image/data/Gr0cGteM-KCp4zq5F.png',
-            'Manchester United': 'https://static.flashscore.com/res/image/data/nwSRlyWg-h2pPXz3k.png',
-            'Bayern Munich': 'https://static.flashscore.com/res/image/data/xSfDCO76-WrjrBuU2.png',
-            'Dortmund': 'https://static.flashscore.com/res/image/data/nP1i5US1.png'
-        };
-        return logoMap[name] || `https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=001e28&textColor=ffe438`;
-    };
-
     return (
         <div className="flex flex-col min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
             {/* Live Score Bar (Dynamic) */}
@@ -107,8 +109,15 @@ export default async function PredictionsPage() {
                 <aside className="hidden lg:flex flex-col space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto pr-2 scrollbar-hide">
                     <div className="text-[9px] font-black text-white/50 uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
                     {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
-                        <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80">
-                            <span className="text-[10px] font-extrabold uppercase truncate group-hover:text-white text-xs">{league.name}</span>
+                        <div
+                            key={i}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80"
+                            title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
+                        >
+                            {league.countries?.flag_url && (
+                                <img src={league.countries.flag_url} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] opacity-80 group-hover:opacity-100" />
+                            )}
+                            <span className="text-[10px] font-medium truncate group-hover:text-white transition-colors">{league.name}</span>
                         </div>
                     )) : (
                         <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
@@ -125,56 +134,105 @@ export default async function PredictionsPage() {
 
                     {displayLeagues.length > 0 ? displayLeagues.map((league: any) => (
                         <div key={league.id} className="sportName soccer overflow-hidden rounded-sm border border-white/5 shadow-2xl">
-                            <div className="headerLeague__wrapper bg-[var(--fs-header)]">
-                                <div className="wcl-header_HrElx py-2 px-3 flex items-center justify-between border-b border-white/5">
+                            <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
+                                <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <Star size={14} className="text-[var(--fs-text-dim)] hover:text-[var(--fs-yellow)] cursor-pointer" />
-                                        <div className="flex flex-col">
-                                            <span className="text-[8px] font-black text-[var(--fs-text-dim)] uppercase leading-none mb-0.5">{league.category || "FOOTBALL"}</span>
-                                            <span className="text-[11px] font-black text-white uppercase tracking-tighter leading-none">{league.name}</span>
+                                        <Star size={14} className="text-white/40 hover:text-[var(--fs-yellow)] cursor-pointer transition-colors" />
+                                        <div className="flex items-center gap-2">
+                                            {league.matches[0]?.leagues?.countries?.code ? (
+                                                <Flag
+                                                    code={league.matches[0].leagues.countries.code}
+                                                    className="w-[18px] h-[12px] flex-shrink-0 rounded-[1px] shadow-sm"
+                                                />
+                                            ) : league.matches[0]?.leagues?.countries?.flag_url && (
+                                                <img
+                                                    src={league.matches[0].leagues.countries.flag_url}
+                                                    alt=""
+                                                    className="w-[18px] h-[12px] flex-shrink-0 object-cover rounded-[1px]"
+                                                />
+                                            )}
+                                            <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
+                                                {league.matches[0]?.leagues?.countries?.name && (
+                                                    <span className="text-white/60 font-black uppercase text-[10px] mr-1.5">{league.matches[0].leagues.countries.name}:</span>
+                                                )}
+                                                {league.name}
+                                            </span>
                                         </div>
                                     </div>
-                                    <span className="text-[9px] font-bold text-[var(--fs-text-dim)] uppercase hover:text-white cursor-pointer">Standings</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[9px] font-black text-[var(--fs-yellow)] drop-shadow-sm uppercase tracking-[0.1em] italic">
+                                            {(league.category || "FOOTBALL").toLowerCase().charAt(0).toUpperCase() + (league.category || "FOOTBALL").toLowerCase().slice(1)} tips
+                                        </span>
+                                        <div className="w-4 h-4 flex items-center justify-center text-white/40">
+                                            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="event__content bg-[var(--fs-header)] divide-y divide-white/5">
-                                {league.matches.map((match: Prediction) => (
-                                    <div key={match.id} className="event__match group flex items-center h-12 hover:bg-white/[0.03] transition-colors relative">
-                                        <div className="px-3">
-                                            <Star size={14} className="text-[var(--fs-text-dim)] group-hover:text-white/40 transition-colors cursor-pointer" />
-                                        </div>
+                                {league.matches.map((match: Prediction) => {
+                                    const dateObj = match.match_date ? new Date(match.match_date) : new Date();
+                                    const day = String(dateObj.getDate()).padStart(2, '0');
+                                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                                    const formattedDate = `${day}.${month}.`;
 
-                                        <div className="w-12 text-center">
-                                            <span className="text-[9px] font-black text-[var(--fs-text-dim)] uppercase whitespace-nowrap opacity-60">
-                                                {match.match_time || "LIVE"}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex-1 flex flex-col justify-center gap-0.5 px-2 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <img src={getLogo(match.home_team)} alt="" className="w-3 sm:w-3.5 h-3 sm:h-3.5 object-contain" />
-                                                <span className="text-[10px] sm:text-[11px] font-bold text-white truncate max-w-[120px] sm:max-w-[150px]">{match.home_team}</span>
+                                    return (
+                                        <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
+                                            {/* Star Column */}
+                                            <div className="w-8 sm:w-10 flex justify-center flex-shrink-0">
+                                                <Star size={12} className="text-white/20 group-hover:text-[var(--fs-yellow)] transition-colors cursor-pointer" />
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <img src={getLogo(match.away_team)} alt="" className="w-3 sm:w-3.5 h-3 sm:h-3.5 object-contain" />
-                                                <span className="text-[10px] sm:text-[11px] font-bold text-white truncate max-w-[120px] sm:max-w-[150px]">{match.away_team}</span>
+
+                                            {/* Date/Time Column */}
+                                            <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5">
+                                                <span className="text-[8px] sm:text-[10px] font-black text-white/90 whitespace-nowrap">
+                                                    {formattedDate}
+                                                </span>
+                                                <span className="text-[8px] sm:text-[10px] font-black text-white/50">
+                                                    {match.match_time || "19:00"}
+                                                </span>
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3">
-                                            <em className="text-[7px] sm:text-[8px] font-black uppercase bg-white/5 px-1 sm:px-1.5 py-0.5 rounded-sm text-[var(--fs-text-dim)] group-hover:text-[var(--fs-yellow)] transition-colors not-italic">Preview</em>
-                                        </div>
+                                            {/* Teams Column */}
+                                            <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
+                                                <div className="flex items-center gap-2 sm:gap-2.5">
+                                                    <img src={getLogo(match.home_team)} alt={`${match.home_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" referrerPolicy="no-referrer" />
+                                                    <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 sm:gap-2.5">
+                                                    <img src={getLogo(match.away_team)} alt={`${match.away_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" referrerPolicy="no-referrer" />
+                                                    <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
+                                                </div>
+                                            </div>
 
-                                        <div className="flex items-center justify-center min-w-[70px] sm:min-w-[100px] bg-black/20 h-full border-l border-white/5 group-hover:bg-white/[0.05] transition-all px-2">
-                                            <span className="text-[9px] sm:text-[11px] font-black text-[var(--fs-yellow)] uppercase tracking-tight">{match.prediction}</span>
-                                        </div>
+                                            {/* Match Preview Column - Visible on all screens */}
+                                            <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2">
+                                                <Link
+                                                    href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
+                                                    className="px-2 sm:px-4 py-1.5 text-[8px] sm:text-[9px] font-black uppercase bg-white/5 border border-white/10 rounded-md text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm group-hover:scale-105"
+                                                >
+                                                    Match Preview
+                                                </Link>
 
-                                        <Link href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`} className="px-2 sm:px-3 opacity-60 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <ArrowRight size={12} className="text-[var(--fs-yellow)]" />
-                                        </Link>
-                                    </div>
-                                ))}
+                                                {/* Tooltip (Desktop Only) */}
+                                                <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] text-white text-[10px] font-bold rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 shadow-xl border border-white/10">
+                                                    Click to see expert prediction!
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#1e293b]"></div>
+                                                </div>
+                                            </div>
+
+                                            {/* Mobile Link Overlay */}
+                                            <Link
+                                                href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
+                                                className="absolute inset-0 z-0 sm:hidden"
+                                                aria-label={`View full prediction details for ${match.home_team} vs ${match.away_team}`}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )) : (

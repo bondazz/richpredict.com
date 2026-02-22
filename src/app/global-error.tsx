@@ -8,7 +8,7 @@ export default function GlobalError({
     reset: () => void
 }) {
     return (
-        <html>
+        <html lang="en">
             <body className="flex min-h-screen flex-col items-center justify-center p-4 bg-zinc-950 text-white">
                 <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
                 <button

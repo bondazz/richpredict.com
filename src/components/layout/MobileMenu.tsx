@@ -91,8 +91,15 @@ export default function MobileMenu({
                                 </div>
                                 <div className="space-y-1">
                                     {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
-                                        <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all cursor-pointer bg-white/5 hover:bg-white/10 text-white">
-                                            <span className="text-[10px] font-bold uppercase truncate">{league.name}</span>
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all cursor-pointer bg-white/5 hover:bg-white/10 text-white group"
+                                            title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
+                                        >
+                                            {league.countries?.flag_url && (
+                                                <img src={league.countries.flag_url} alt="" className="w-4 h-2.5 object-cover rounded-[1px] opacity-70 group-hover:opacity-100 transition-opacity" />
+                                            )}
+                                            <span className="text-[10px] font-medium truncate">{league.name}</span>
                                         </div>
                                     )) : (
                                         <div className="px-3 py-2 text-[10px] text-white/20 italic">No pinned data</div>

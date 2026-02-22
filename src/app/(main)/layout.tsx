@@ -2,16 +2,19 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { cn } from '@/lib/utils'
 import { TitleProvider } from '@/context/TitleContext'
-import { getPinnedLeagues, getCountriesByRegion } from '@/lib/supabase'
+import { getPinnedLeagues, getCountriesByRegion, getPredictions, getBlogPosts } from '@/lib/supabase'
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [pinnedLeagues, allCountries] = await Promise.all([
+  const [pinnedLeagues, allCountries, footballPredictions, tennisPredictions, latestNews] = await Promise.all([
     getPinnedLeagues(),
-    getCountriesByRegion()
+    getCountriesByRegion(),
+    getPredictions(8, 'Football'),
+    getPredictions(8, 'Tennis'),
+    getBlogPosts(8)
   ]);
 
   // Group countries by region
@@ -36,7 +39,11 @@ export default async function MainLayout({
         <main className="flex-1 w-full bg-[var(--fs-bg)]">
           {children}
         </main>
-        <Footer />
+        <Footer
+          footballPredictions={footballPredictions}
+          tennisPredictions={tennisPredictions}
+          latestNews={latestNews}
+        />
       </div>
     </TitleProvider>
   )
