@@ -8,13 +8,17 @@ import {
     Users,
     LogOut,
     Zap,
-    Settings
+    Settings,
+    Newspaper,
+    Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Matches', href: '/admin/dashboard', icon: Trophy, active: true }, // For now, Matches is the dashboard list
+    { name: 'Matches', href: '/admin/dashboard', icon: Trophy, active: true },
+    { name: 'News', href: '/admin/news', icon: Newspaper },
+    { name: 'AI Bot', href: '/admin/bot', icon: Bot },
     { name: 'Countries', href: '/admin/countries', icon: Globe },
     { name: 'Teams', href: '/admin/teams', icon: Users },
     { name: 'Team Scraper', href: '/admin/scraper', icon: Zap },

@@ -32,15 +32,16 @@ export default function MatchPreview({ content }: MatchPreviewProps) {
 
             <div className={cn(
                 "p-6 transition-all duration-500 ease-in-out relative",
-                isExpanded ? "max-h-[2000px] opacity-100" : "max-h-[120px] opacity-80 overflow-hidden"
+                isExpanded ? "max-h-[8000px] opacity-100" : "max-h-[280px] opacity-90 overflow-hidden"
             )}>
-                <div className="text-[12px] md:text-[13px] text-white/80 leading-relaxed font-medium space-y-6">
-                    {displayContent.split(/\r?\n/).filter(p => p.trim() !== '').map((paragraph, idx) => (
-                        <p key={idx} className={idx === 0 ? "first-letter:text-3xl first-letter:font-black first-letter:mr-2 first-letter:float-left first-letter:text-[var(--fs-yellow)]" : ""}>
-                            {paragraph}
-                        </p>
-                    ))}
-                </div>
+                <div
+                    className="prose prose-invert max-w-none text-[13px] text-white/80 leading-relaxed font-medium 
+                               [&>h2]:text-[var(--fs-yellow)] [&>h2]:text-lg [&>h2]:font-black [&>h2]:uppercase [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:tracking-tighter [&>h2]:border-b [&>h2]:border-white/5 [&>h2]:pb-2
+                               [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-black [&>h3]:uppercase [&>h3]:mt-6 [&>h3]:mb-3 [&>h3]:tracking-tight
+                               [&>p]:mb-5 [&>p]:last:mb-0
+                               [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-black [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>p:first-of-type]:first-letter:text-[var(--fs-yellow)] [&>p:first-of-type]:first-letter:mt-1"
+                    dangerouslySetInnerHTML={{ __html: displayContent }}
+                />
 
                 {!isExpanded && (
                     <div

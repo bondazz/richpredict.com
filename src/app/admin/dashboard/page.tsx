@@ -1,4 +1,4 @@
-import { getAllPredictions } from '@/lib/supabase'
+import { getAllPredictions, getTotalPredictionsStats } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -35,13 +35,12 @@ export default async function AdminDashboard() {
         redirect('/admin/login')
     }
 
-    const predictions = await getAllPredictions(100)
+    const [predictions, stats] = await Promise.all([
+        getAllPredictions(200),
+        getTotalPredictionsStats()
+    ]);
 
-    // Stats
-    const total = predictions.length
-    const premium = predictions.filter(p => p.is_premium).length
-    const football = predictions.filter(p => !p.category || p.category.toLowerCase() === 'football').length
-    const other = total - football
+    const { total, premium, football, other } = stats;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">

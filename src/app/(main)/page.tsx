@@ -36,7 +36,7 @@ export default async function Home() {
 
     try {
         const [preds, regs, pinned, countries, pCount, teams, blogs] = await Promise.all([
-            getPredictions(50, 'Football'),
+            getPredictions(300, 'Football'),
             getRegions(),
             getPinnedLeagues(),
             getCountriesByRegion(),
@@ -68,19 +68,21 @@ export default async function Home() {
         }
     });
 
-    // Group predictions by league
-    const groupedLeagues = predictions.reduce((acc: any, prediction: Prediction) => {
-        const leagueName = prediction.league || "Other Competitions";
+    // Group predictions by league + country to prevent name collision (e.g., Premier League in different countries)
+    const groupedLeagues = predictions.reduce((acc: any, p: Prediction) => {
+        const countryId = p.leagues?.country_id || 'world';
+        const leagueId = p.league_id || p.league || 'other';
+        const groupKey = `${countryId}-${leagueId}`;
 
-        if (!acc[leagueName]) {
-            acc[leagueName] = {
-                id: leagueName.toLowerCase().replace(/\s+/g, '-'),
-                name: leagueName,
-                category: "FOOTBALL",
+        if (!acc[groupKey]) {
+            acc[groupKey] = {
+                id: groupKey,
+                name: p.league || "Other Competitions",
+                category: p.category || "FOOTBALL",
                 matches: []
             };
         }
-        acc[leagueName].matches.push(prediction);
+        acc[groupKey].matches.push(p);
         return acc;
     }, {});
 

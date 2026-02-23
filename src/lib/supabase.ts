@@ -50,16 +50,32 @@ export type Team = {
 }
 
 export type BlogPost = {
-    id: string
-    created_at: string
-    title: string
-    slug: string
-    content: string
-    excerpt: string
-    image_url?: string
-    author?: string
-    published: boolean
-}
+    id: string;
+    created_at: string;
+    updated_at: string;
+    published_at?: string;
+    title: string;
+    slug: string;
+    content: string;
+    excerpt: string;
+    image_url?: string;
+    author?: string;
+    published: boolean;
+
+    // SEO Fields
+    meta_title?: string;
+    meta_description?: string;
+    meta_keywords?: string;
+    og_image_url?: string;
+    canonical_url?: string;
+
+    // Taxonomy
+    tags?: string[];
+    category?: string;
+    language: string;
+    is_indexable: boolean;
+    reading_time?: number;
+};
 
 export type Prediction = {
     id: string
@@ -207,27 +223,63 @@ export const getPredictions = async (limit = 50, category?: string) => {
     return finalData as Prediction[];
 }
 
-export const getBlogPosts = async (limit = 6) => {
+export const getBlogPosts = async (limit = 20) => {
     const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
-        .eq('published', true)
         .order('created_at', { ascending: false })
         .limit(limit)
 
-    if (error) {
-        // Handle common errors like missing table (42P01) or PostgREST missing rows (PGRST116)
-        // We log as warning instead of error to avoid triggering Next.js 15 dev error overlay
-        const isTableMissing = error.code === '42P01' || error.message?.includes('does not exist');
-
-        if (!isTableMissing) {
-            console.warn('Blog posts fetch notice:', error.message || 'Table might be empty or missing.');
-        }
-
-        return []
-    }
-
+    if (error) return []
     return data as BlogPost[]
+}
+
+export const insertBlogPost = async (post: Partial<BlogPost>) => {
+    const { data, error } = await supabase
+        .from('blog_posts')
+        .insert([post])
+        .select()
+        .single()
+
+    if (error) {
+        console.error('SUPABASE_ERROR:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+        throw error;
+    }
+    return data as BlogPost
+}
+
+export const updateBlogPost = async (id: string, post: Partial<BlogPost>) => {
+    const { data, error } = await supabase
+        .from('blog_posts')
+        .update(post)
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) {
+        console.error('Error updating blog post:', error)
+        throw error
+    }
+    return data as BlogPost
+}
+
+export const getBlogPostById = async (id: string) => {
+    const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+    if (error) {
+        console.error('Error fetching blog post by id:', error)
+        return null
+    }
+    return data as BlogPost
 }
 
 export const getPredictionById = async (id: string | number) => {
@@ -285,7 +337,11 @@ export const getPredictionBySlug = async (slug: string) => {
         }
     }
 
-    let query = supabase
+    // Robust cleaning for comparison
+    const cleanLook = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // Search for predictions with the same date/suffix
+    const { data: results, error: searchError } = await supabase
         .from('predictions')
         .select(`
             *,
@@ -300,34 +356,32 @@ export const getPredictionBySlug = async (slug: string) => {
                 )
             )
         `)
-
-    // We must match the suffix (date) AND either of the team names
-    if (homePart && awayPart) {
-        query = query.ilike('home_team', `%${homePart}%`).ilike('away_team', `%${awayPart}%`)
-    } else if (homePart) {
-        query = query.ilike('home_team', `%${homePart}%`)
-    }
-
-    // Also filter by suffix (date part)
-    query = query.ilike('slug', `%${suffix}%`)
-
-    const { data: results, error: searchError } = await query.limit(5)
+        .ilike('slug', `%${suffix}%`)
+        .limit(20);
 
     if (searchError || !results || results.length === 0) {
-        if (searchError) console.warn('Error fetching prediction by lookup:', searchError.message || searchError);
-        return null
+        return null;
     }
 
-    // Try to find the best match amongst results
-    if (results.length > 1 && homePart) {
-        const bestMatch = results.find(r =>
-            r.home_team.toLowerCase().includes(homePart.toLowerCase()) ||
-            homePart.toLowerCase().includes(r.home_team.toLowerCase())
-        )
-        if (bestMatch) return bestMatch as Prediction
-    }
+    // Find the best match by comparing cleaned team names
+    const homeClean = cleanLook(homePart);
+    const awayClean = cleanLook(awayPart);
 
-    return results[0] as Prediction
+    const bestMatch = results.find(r => {
+        const rHomeClean = cleanLook(r.home_team);
+        const rAwayClean = cleanLook(r.away_team);
+
+        // Match if both clean names are similar
+        return (rHomeClean.includes(homeClean) || homeClean.includes(rHomeClean)) &&
+            (rAwayClean.includes(awayClean) || awayClean.includes(rAwayClean));
+    });
+
+    if (bestMatch) return bestMatch as Prediction;
+
+    // Absolute fallback: just return the first one if only one result for that date
+    if (results.length === 1) return results[0] as Prediction;
+
+    return null;
 }
 
 export const getCountriesByRegion = async () => {
@@ -417,7 +471,26 @@ export const getTeams = async () => {
     return allTeams;
 }
 
-export const getAllPredictions = async (limit = 100) => {
+export const getTotalPredictionsStats = async () => {
+    const [totalRes, premiumRes, footballRes] = await Promise.all([
+        supabase.from('predictions').select('*', { count: 'exact', head: true }),
+        supabase.from('predictions').select('*', { count: 'exact', head: true }).eq('is_premium', true),
+        supabase.from('predictions').select('*', { count: 'exact', head: true }).or(`category.ilike.Football,category.is.null`)
+    ]);
+
+    const total = totalRes.count || 0;
+    const premium = premiumRes.count || 0;
+    const football = footballRes.count || 0;
+
+    return {
+        total,
+        premium,
+        football,
+        other: total - football
+    };
+}
+
+export const getAllPredictions = async (limit = 200) => {
     const { data, error } = await supabase
         .from('predictions')
         .select(`

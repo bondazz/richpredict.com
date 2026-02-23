@@ -1,0 +1,334 @@
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { chromium, Browser, Page } from 'playwright';
+import { generateSEOSlug } from '@/lib/utils';
+
+const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+async function getDeepSeekAnalysis(matchData: any, logs: string[]) {
+    if (!process.env.DEEPSEEK_API_KEY) {
+        logs.push("⚠️ DeepSeek API Key missing from environment.");
+        return null;
+    }
+
+    try {
+        const allowedMarkets = [
+            '1.5 Goals Over', '1.5 Goals Under', '2.5 Goals Over', '2.5 Goals Under', '3.5 Goals Over',
+            'Double Chance (1X)', 'Double Chance (X2)', 'Double Chance (12)', 'Home Win', 'Away Win', 'Draw',
+            'Super Single', 'Both Teams to Score (Yes)', 'Both Teams to Score (No)', 'Draw No Bet (1)', 'Draw No Bet (2)',
+            'Win Either Half', 'Over 0.5 First Half', 'Under 1.5 First Half', 'Home Clean Sheet (Yes)', 'Home Clean Sheet (No)',
+            'Away Clean Sheet (Yes)', 'Away Clean Sheet (No)', 'Highest Scoring Half', 'Multi Goals (2-4 Goals)',
+            'Handicap (+1.5)', 'Handicap (+2.5)', 'Home to Score', 'Away to Score'
+        ];
+
+        const prompt = `
+        You are a premier football analyst. Generate a professional match analysis in JSON format.
+        
+        MATCH: ${matchData.home} vs ${matchData.away}
+        LEAGUE: ${matchData.leagueName}
+        
+        STRICT MARKET SELECTION (You MUST choose EXACTLY one from this list):
+        ${allowedMarkets.join(', ')}
+
+        CORE ANALYSIS REQUIREMENTS:
+        1. CONTENT: Minimum 350-500 words. Write as an expert betting consultant.
+        2. HTML STRUCTURE: You MUST follow this exact template for 'AI_Strategic_Analysis':
+           <h2>[Specific Match Title] - Tactical Analysis & Betting Verdict</h2>
+           <p>[Opening professional insight...]</p>
+           <h3>Tactical Overview</h3>
+           <p>[Deep dive into systems, manager tactics...]</p>
+           <h3>Key Player Impact & Team News</h3>
+           <p>[Injuries, influential players, expected rotations...]</p>
+           <h3>Statistical Trends (H2H, Recent Form)</h3>
+           <p>[Data-driven analysis of past encounters and current streaks...]</p>
+           <h3>Final Betting Verdict</h3>
+           <p>[Summarize why the chosen market is the best play...]</p>
+        
+        3. DYNAMIC METRICS:
+           - AI_Confidence_Index: Provide a unique percentage (60-80%).
+           - Market_Odds: Realistic decimal odds (e.g., 1.95).
+           - Global_Distribution_Matrix: Realistic world sentiment (Sums to 100).
+
+        RETURN ONLY JSON:
+        {
+          "AI_Signal_Outcome": "EXACT_MARKET_FROM_LIST",
+          "AI_Strategic_Analysis": "HTML_CONTENT_FOLLOWING_TEMPLATE",
+          "Global_Distribution_Matrix": {"home": X, "draw": Y, "away": Z},
+          "AI_Confidence_Index": "Unique %",
+          "Market_Odds": 0.00
+        }`;
+
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [
+                    { role: "system", content: "You are a world-class football tipster. You ONLY provide predictions from the official market list and follow strict HTML formatting." },
+                    { role: "user", content: prompt }
+                ],
+                response_format: { type: "json_object" }
+            })
+        });
+
+        const data = await response.json();
+        const content = JSON.parse(data.choices[0].message.content);
+
+        // Sanitize Outcome: Ensure it's in the allowed list
+        let finalOutcome = content.AI_Signal_Outcome;
+        if (!allowedMarkets.includes(finalOutcome)) {
+            finalOutcome = allowedMarkets.find(m => m.toLowerCase().includes(finalOutcome.toLowerCase())) || 'Home Win';
+        }
+
+        return {
+            prediction: finalOutcome,
+            analysis: content.AI_Strategic_Analysis,
+            confidence: content.AI_Confidence_Index,
+            distribution: content.Global_Distribution_Matrix,
+            odds: parseFloat(content.Market_Odds) || 1.85
+        };
+    } catch (err: any) {
+        logs.push(`❌ DeepSeek Error: ${err.message}`);
+        return null;
+    }
+}
+
+export async function POST(req: Request) {
+    let browser: Browser | null = null;
+    try {
+        const { matchDate, maxMatches } = await req.json();
+        const logs: string[] = [];
+
+        const { data: regions } = await supabaseAdmin.from('regions').select('*').order('order_index');
+        const defaultRegionId = regions?.[0]?.id;
+
+        logs.push(`🚀 BOT: DeepSeek AI Strategic Sync (v6)`);
+        logs.push(`Target Date: ${matchDate}`);
+
+        browser = await chromium.launch({ headless: true });
+        const context = await browser.newContext({
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            viewport: { width: 1440, height: 1200 }
+        });
+
+        const page = await context.newPage();
+        logs.push("Opening Flashscore...");
+        await page.goto('https://www.flashscore.com/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        try {
+            const cookieBtn = await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
+            if (cookieBtn) {
+                await cookieBtn.click();
+                logs.push("Cookies accepted.");
+            }
+        } catch (e) { }
+
+        // 1. DATE NAVIGATION (Strictly Sequential)
+        const targetDateObj = new Date(matchDate);
+        const todayObj = new Date();
+        const diffDays = Math.round((targetDateObj.getTime() - todayObj.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0) {
+            logs.push(`Navigating forward ${diffDays} day(s)...`);
+            for (let i = 0; i < diffDays; i++) {
+                const nextBtn = await page.waitForSelector('button.wcl-arrow_YpdN4[data-day-picker-arrow="next"]', { timeout: 10000 });
+                if (nextBtn) {
+                    await nextBtn.click();
+                    await page.waitForTimeout(5000);
+                    logs.push(`Step: Moved to next day.`);
+                }
+            }
+        }
+
+        // Comprehensive Scrolling to ensure all lazy-loaded matches are visible from top to bottom
+        logs.push("Scrolling to load all fixtures...");
+        for (let i = 0; i < 4; i++) {
+            await page.evaluate(() => window.scrollBy(0, 1500));
+            await page.waitForTimeout(1500);
+        }
+        await page.evaluate(() => window.scrollTo(0, 0)); // Return to top for extraction
+        await page.waitForTimeout(1000);
+
+        // 2. SCRAPE MATCH LIST (STRICT TOP-TO-BOTTOM)
+        const rawMatches = await page.evaluate((limit) => {
+            const results: any[] = [];
+            const seenUrls = new Set();
+
+            let lastLeagueName = 'General';
+            let lastLeagueUrl = '';
+            let lastCountryName = 'International';
+
+            // Robust selectors for current Flashscore layout
+            const allElements = document.querySelectorAll('.headerLeague, .event__match, [class*="leagueHeader"], [class*="event__match"]');
+
+            for (const el of Array.from(allElements)) {
+                if (results.length >= limit) break;
+
+                // Detect Header (Country + League)
+                const isHeader = el.classList.contains('headerLeague') || el.className.includes('leagueHeader');
+
+                if (isHeader) {
+                    // Try to find Category (Country) and Title (League)
+                    const categoryEl = el.querySelector('.headerLeague__category-text, [class*="category-text"], .headerLeague__category');
+                    const titleEl = el.querySelector('.headerLeague__title, [class*="leagueHeader__title"], .headerLeague__title-text');
+
+                    if (titleEl) {
+                        const rawHeader = el.textContent || '';
+                        // Usually format is "COUNTRY: League Name"
+                        if (rawHeader.includes(':')) {
+                            const parts = rawHeader.split(':');
+                            lastCountryName = parts[0].trim();
+                            lastLeagueName = parts[1].replace('Football Tips', '').trim();
+                        } else {
+                            lastLeagueName = titleEl.textContent?.replace('Football Tips', '').trim() || lastLeagueName;
+                            lastCountryName = categoryEl?.textContent?.trim() || lastCountryName;
+                        }
+
+                        lastLeagueUrl = (titleEl as HTMLAnchorElement).href || (titleEl.querySelector('a') as HTMLAnchorElement)?.href || '';
+                    }
+                } else {
+                    // Detect Match Row
+                    const isMatch = el.classList.contains('event__match') || el.className.includes('event__match');
+                    if (isMatch) {
+                        const home = el.querySelector('.event__homeParticipant .wcl-name_jjfMf, [class*="homeParticipant"] .wcl-name')?.textContent?.trim();
+                        const away = el.querySelector('.event__awayParticipant .wcl-name_jjfMf, [class*="awayParticipant"] .wcl-name')?.textContent?.trim();
+                        const time = el.querySelector('.event__time, [class*="event__time"]')?.textContent?.trim() || '21:00';
+                        const matchUrl = (el.querySelector('.eventRowLink, a[class*="eventRowLink"]') as HTMLAnchorElement)?.href;
+                        const homeLogo = el.querySelector('.event__homeParticipant img, [class*="homeParticipant"] img')?.getAttribute('src');
+                        const awayLogo = el.querySelector('.event__awayParticipant img, [class*="awayParticipant"] img')?.getAttribute('src');
+
+                        if (home && away && matchUrl && !seenUrls.has(matchUrl)) {
+                            seenUrls.add(matchUrl);
+                            results.push({
+                                home, away, time, matchUrl,
+                                leagueName: lastLeagueName,
+                                leagueUrl: lastLeagueUrl,
+                                countryName: lastCountryName,
+                                fallbackLogos: { home: homeLogo, away: awayLogo }
+                            });
+                        }
+                    }
+                }
+            }
+            return results;
+        }, maxMatches);
+
+        logs.push(`Extracted ${rawMatches.length} matches. Starting High-Speed Sync...`);
+
+        for (const match of rawMatches) {
+            const baseSlug = `${slugify(match.home)}-vs-${slugify(match.away)}-${matchDate}`;
+            const seoSlug = generateSEOSlug(match.home, match.away, baseSlug);
+
+            // 1. INSTANT DUPLICATE SKIP (Speed Win)
+            const { data: exists } = await supabaseAdmin.from('predictions').select('id').eq('slug', seoSlug).single();
+            if (exists) {
+                logs.push(`⏩ Skipping ${match.home} - Already published.`);
+                continue;
+            }
+
+            logs.push(`-------------------------------------------`);
+            logs.push(`Syncing: ${match.home} vs ${match.away}`);
+
+            // 2. DB Assets Sync (Optimized)
+            let countryId = '';
+            const normalizedCountry = match.countryName.toUpperCase();
+            const { data: regionMatch } = await supabaseAdmin.from('regions').select('id').ilike('name', normalizedCountry).single();
+            const targetRegionId = regionMatch?.id || defaultRegionId;
+
+            const { data: existingCountry } = await supabaseAdmin.from('countries').select('id').ilike('name', match.countryName).single();
+            if (existingCountry) countryId = existingCountry.id;
+            else {
+                const { data: newCountry } = await supabaseAdmin.from('countries').insert([{ name: match.countryName, region_id: targetRegionId }]).select().single();
+                countryId = newCountry?.id || '';
+            }
+
+            if (!countryId) continue;
+
+            let leagueId = '';
+            const { data: existingLeague } = await supabaseAdmin.from('leagues').select('id, logo_url').eq('country_id', countryId).ilike('name', match.leagueName).single();
+            if (existingLeague) {
+                leagueId = existingLeague.id;
+            } else {
+                const lp = await context.newPage();
+                try {
+                    await lp.goto(match.leagueUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                    const lurl = await lp.$eval('.heading__logo', (img: any) => img.src).catch(() => '');
+                    const { data: nl } = await supabaseAdmin.from('leagues').insert([{ name: match.leagueName, country_id: countryId, logo_url: lurl }]).select().single();
+                    leagueId = nl?.id || '';
+                } catch (e) { }
+                await lp.close();
+            }
+
+            // 3. TEAM LOGO SYNC (Only if missing - Huge Speed Win)
+            const syncTeam = async (name: string, fallbackLogo: string) => {
+                const { data: team } = await supabaseAdmin.from('teams').select('id, logo_url').eq('country_id', countryId).ilike('name', name).single();
+                if (team) {
+                    return { id: team.id, hasLogo: !!team.logo_url };
+                } else {
+                    const { data: nt } = await supabaseAdmin.from('teams').insert([{
+                        name: name, country_id: countryId, league_id: leagueId || null, logo_url: fallbackLogo
+                    }]).select().single();
+                    return { id: nt?.id || null, hasLogo: !!fallbackLogo };
+                }
+            };
+
+            const homeStatus = await syncTeam(match.home, match.fallbackLogos.home || '');
+            const awayStatus = await syncTeam(match.away, match.fallbackLogos.away || '');
+
+            // Only open match page for HD logos if we actually need them
+            let homeHd = '', awayHd = '';
+            if (!homeStatus.hasLogo || !awayStatus.hasLogo) {
+                const matchPage = await context.newPage();
+                try {
+                    await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                    homeHd = await matchPage.$eval('.duelParticipant__home .participant__image', (img: any) => img.src).catch(() => '');
+                    awayHd = await matchPage.$eval('.duelParticipant__away .participant__image', (img: any) => img.src).catch(() => '');
+
+                    if (homeHd && !homeStatus.hasLogo) await supabaseAdmin.from('teams').update({ logo_url: homeHd }).eq('id', homeStatus.id);
+                    if (awayHd && !awayStatus.hasLogo) await supabaseAdmin.from('teams').update({ logo_url: awayHd }).eq('id', awayStatus.id);
+                } catch (err) { }
+                await matchPage.close();
+            }
+
+            // 4. DEEPSEEK AI ANALYSIS (Fast Track)
+            logs.push(`Consulting DeepSeek AI for ${match.home}...`);
+            const ai = await getDeepSeekAnalysis({ ...match, matchDate }, logs);
+
+            if (ai) {
+                await supabaseAdmin.from('predictions').upsert([{
+                    home_team: match.home,
+                    away_team: match.away,
+                    prediction: ai.prediction,
+                    odds: ai.odds || 1.85,
+                    match_date: matchDate,
+                    match_time: match.time,
+                    league: match.leagueName,
+                    league_id: leagueId || null,
+                    confidence: ai.confidence,
+                    analysis: ai.analysis,
+                    category: 'Football',
+                    status: 'Upcoming',
+                    slug: seoSlug,
+                    dist_home: ai.distribution?.home || 33,
+                    dist_draw: ai.distribution?.draw || 33,
+                    dist_away: ai.distribution?.away || 34,
+                    created_at: new Date().toISOString()
+                }], { onConflict: 'slug' });
+
+                logs.push(`✅ Published: ${seoSlug}`);
+            } else {
+                logs.push(`⚠️ Skipping ${match.home} - AI service busy.`);
+            }
+        }
+
+        await browser.close();
+        return NextResponse.json({ success: true, count: rawMatches.length, logs });
+
+    } catch (error: any) {
+        if (browser) await browser.close();
+        return NextResponse.json({ success: false, error: error.message, logs: [`CRITICAL: ${error.message}`] });
+    }
+}
