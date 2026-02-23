@@ -97,7 +97,11 @@ export default function MobileMenu({
                                             title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
                                         >
                                             {league.countries?.flag_url && (
-                                                <img src={league.countries.flag_url} alt="" className="w-4 h-2.5 object-cover rounded-[1px] opacity-70 group-hover:opacity-100 transition-opacity" />
+                                                <div
+                                                    className="w-4 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none select-none"
+                                                    style={{ backgroundImage: `url(${league.countries.flag_url})` }}
+                                                    aria-label={`${league.countries.name} flag`}
+                                                />
                                             )}
                                             <span className="text-[10px] font-medium truncate">{league.name}</span>
                                         </div>

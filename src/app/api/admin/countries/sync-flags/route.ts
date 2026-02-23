@@ -18,11 +18,57 @@ export async function POST(req: Request) {
         logs.push("Flashscore açılır...");
         await page.goto('https://www.flashscore.com/', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
+        // COOKIES ACCEPT (if any)
+        try {
+            const cookieBtn = await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
+            if (cookieBtn) await cookieBtn.click();
+        } catch (e) { }
+
+        // 1. BÜTÜN ÖLKƏLƏRİ GÖRMƏK ÜÇÜN "SHOW MORE" DÜYMƏSİNİ TAP VƏ KLİKLƏ
+        logs.push("Bütün ölkələr siyahısı genişləndirilir...");
+        try {
+            await page.evaluate(() => {
+                // 1. "Countries" başlığını tapırıq
+                const headers = Array.from(document.querySelectorAll('.lmc__head'));
+                const countriesHeader = headers.find(h => h.textContent?.includes('Countries'));
+
+                if (countriesHeader) {
+                    // 2. Bu başlıqdan sonrakı ilk "Show more" düyməsini tapırıq
+                    let parent = countriesHeader.parentElement;
+                    while (parent && !parent.querySelector('.lmc__itemMore')) {
+                        parent = parent.parentElement;
+                        if (parent && parent.id === 'category-left-menu') break;
+                    }
+
+                    const showMoreBtn = parent?.querySelector('.lmc__itemMore') as HTMLElement;
+                    if (showMoreBtn) {
+                        showMoreBtn.click();
+                        return "CLICKED";
+                    }
+                }
+                return "NOT_FOUND";
+            }).then(res => {
+                logs.push(res === "CLICKED" ? "✅ 'Show more' klikləndi." : "⚠️ 'Show more' düyməsi tapılmadı.");
+            });
+
+            await page.waitForTimeout(3000); // Siyahının tam açılması üçün vaxt veririk
+
+            // Siyahı çox uzun olduğu üçün skrol edirik
+            await page.evaluate(() => {
+                window.scrollBy(0, 1000);
+            });
+            await page.waitForTimeout(1000);
+
+        } catch (e) {
+            logs.push("⚠️ Genişləndirmə zamanı xəta oldu.");
+        }
+
         // 1. SOLDAN ÖLKƏ SİYAHISINI GÖTÜR
         const countriesList = await page.evaluate(() => {
             const items: any[] = [];
             const container = document.querySelector('#category-left-menu');
             if (container) {
+                // Bütün lmc__element lmc__item klassına sahib linkləri götürürük
                 const links = container.querySelectorAll('a.lmc__item');
                 links.forEach(link => {
                     const name = link.querySelector('.lmc__elementName')?.textContent?.trim();

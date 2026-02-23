@@ -103,7 +103,7 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
         return acc;
     }, {});
 
-    const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "Australia & Oceania"];
+    const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
 
     const schemaMatch = {
         homeTeam: match.home_team,
@@ -155,24 +155,30 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
             </div>
 
             <main className="max-w-[1240px] mx-auto w-full px-2 py-6 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-6">
-                <aside className="hidden lg:flex flex-col space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto pr-2 scrollbar-hide">
-                    <div className="text-[9px] font-black text-white/50 uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
+                <aside className="hidden lg:flex flex-col space-y-1 pr-2">
+                    <div className="text-[10px] font-black text-white uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
                     {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
                         <div
                             key={i}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80"
+                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
                             title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
                         >
                             {league.countries?.flag_url && (
-                                <img src={league.countries.flag_url} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] opacity-80 group-hover:opacity-100" />
+                                <div
+                                    className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 pointer-events-none select-none"
+                                    style={{ backgroundImage: `url(${league.countries.flag_url})` }}
+                                    aria-label={`${league.countries.name} flag`}
+                                />
                             )}
-                            <span className="text-[10px] font-medium truncate group-hover:text-white transition-colors">{league.name}</span>
+                            <span className="text-[11px] font-medium truncate transition-colors">
+                                {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
+                            </span>
                         </div>
                     )) : (
                         <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
                     )}
                     <SidebarAd />
-                    <div className="pt-2 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
+                    <div className="pt-2 text-[10px] font-black text-white uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
                     <SidebarCountries countriesByRegion={countriesByRegion} regionOrder={regionOrder} />
                 </aside>
 
@@ -182,16 +188,11 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                     <div className="rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden group">
                         <div className="bg-[#0b242e]/80 backdrop-blur-xl px-6 py-3 border-b border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                {match.leagues?.countries?.code ? (
-                                    <Flag
-                                        code={match.leagues.countries.code}
-                                        className="w-[18px] h-[12px] rounded-[1px] shadow-sm flex-shrink-0"
-                                    />
-                                ) : match.leagues?.countries?.flag_url && (
-                                    <img
-                                        src={match.leagues.countries.flag_url}
-                                        alt=""
-                                        className="w-[18px] h-[12px] object-cover rounded-[1px] flex-shrink-0"
+                                {match.leagues?.countries?.flag_url && (
+                                    <div
+                                        className="w-[18px] h-[12px] bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm flex-shrink-0 pointer-events-none select-none"
+                                        style={{ backgroundImage: `url(${match.leagues.countries.flag_url})` }}
+                                        aria-label={`${match.leagues.countries.name} flag`}
                                     />
                                 )}
                                 <div className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md flex items-center">
@@ -215,7 +216,11 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                                 {/* Home Team */}
                                 <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 flex-1 min-w-0">
                                     <div className="relative">
-                                        <img src={getLogo(match.home_team)} alt={match.home_team} className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 object-contain relative z-10 drop-shadow-2xl" referrerPolicy="no-referrer" />
+                                        <div
+                                            className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 bg-center bg-no-repeat bg-contain relative z-10 drop-shadow-2xl pointer-events-none select-none"
+                                            style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
+                                            aria-label={`${match.home_team} logo`}
+                                        />
                                     </div>
                                     <h2 className="text-[9px] sm:text-xs md:text-xl font-black uppercase text-white tracking-tighter leading-none font-outfit truncate w-full px-1">{match.home_team}</h2>
                                 </div>
@@ -269,7 +274,11 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                                 {/* Away Team */}
                                 <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 flex-1 min-w-0">
                                     <div className="relative">
-                                        <img src={getLogo(match.away_team)} alt={match.away_team} className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 object-contain relative z-10 drop-shadow-2xl" referrerPolicy="no-referrer" />
+                                        <div
+                                            className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 bg-center bg-no-repeat bg-contain relative z-10 drop-shadow-2xl pointer-events-none select-none"
+                                            style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
+                                            aria-label={`${match.away_team} logo`}
+                                        />
                                     </div>
                                     <h2 className="text-[9px] sm:text-xs md:text-xl font-black uppercase text-white tracking-tighter leading-none font-outfit truncate w-full px-1">{match.away_team}</h2>
                                 </div>
@@ -343,7 +352,7 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                                     VIP <span className="text-[var(--fs-yellow)]">PREMIUM</span>
                                 </h3>
                                 <div className="text-[9px] font-black bg-[var(--fs-yellow)]/10 text-[var(--fs-yellow)] px-2 py-0.5 rounded-sm inline-block uppercase tracking-[0.2em]">
-                                    Professional Intent
+                                    SUBSCRIBERS
                                 </div>
                             </div>
                             <button className="w-full bg-[var(--fs-yellow)] text-black py-3 rounded-lg text-[11px] font-[Klapt] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(255,221,0,0.15)] flex items-center justify-center gap-2">

@@ -21,23 +21,17 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
                 <h3 className="text-[11px] font-black uppercase tracking-widest text-white/80">Featured Upcoming Matches</h3>
             </div>
 
-            <div className="sportName soccer overflow-hidden rounded-sm border border-white/5 shadow-2xl">
+            <div className="sportName soccer overflow-hidden rounded-xl border border-white/5 shadow-2xl">
                 {/* Header - EXACT SAME AS HOME PAGE */}
                 <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
                     <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Star size={14} className="text-white/40 hover:text-[var(--fs-yellow)] cursor-pointer transition-colors" />
                             <div className="flex items-center gap-2">
-                                {matches[0]?.leagues?.countries?.code ? (
-                                    <Flag
-                                        code={matches[0].leagues.countries.code}
-                                        className="w-[18px] h-[12px] flex-shrink-0 rounded-[1px] shadow-sm"
-                                    />
-                                ) : matches[0]?.leagues?.countries?.flag_url && (
-                                    <img
-                                        src={matches[0].leagues.countries.flag_url}
-                                        alt=""
-                                        className="w-[18px] h-[12px] flex-shrink-0 object-cover rounded-[1px]"
+                                {matches[0]?.leagues?.countries?.flag_url && (
+                                    <div
+                                        className="w-[18px] h-[12px] bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm flex-shrink-0 pointer-events-none select-none"
+                                        style={{ backgroundImage: `url(${matches[0].leagues.countries.flag_url})` }}
+                                        aria-label={`${matches[0].leagues.countries.name} flag`}
                                     />
                                 )}
                                 <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
@@ -71,13 +65,8 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
 
                         return (
                             <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
-                                {/* Star Column */}
-                                <div className="w-8 sm:w-10 flex justify-center flex-shrink-0">
-                                    <Star size={12} className="text-white/20 group-hover:text-[var(--fs-yellow)] transition-colors cursor-pointer" />
-                                </div>
-
                                 {/* Date/Time Column */}
-                                <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5">
+                                <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5 ml-2">
                                     <span className="text-[8px] sm:text-[10px] font-black text-white/90 whitespace-nowrap">
                                         {formattedDate}
                                     </span>
@@ -89,29 +78,43 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
                                 {/* Teams Column */}
                                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
                                     <div className="flex items-center gap-2 sm:gap-2.5">
-                                        <img src={getLogo(match.home_team)} alt={`${match.home_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" />
+                                        <div
+                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
+                                            style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
+                                            aria-label={`${match.home_team} logo`}
+                                        />
                                         <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
                                     </div>
                                     <div className="flex items-center gap-2 sm:gap-2.5">
-                                        <img src={getLogo(match.away_team)} alt={`${match.away_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" />
+                                        <div
+                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
+                                            style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
+                                            aria-label={`${match.away_team} logo`}
+                                        />
                                         <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
                                     </div>
                                 </div>
 
                                 {/* Match Preview Column */}
-                                <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative pr-2">
+                                <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
                                     <Link
                                         href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                        className="px-2 sm:px-4 py-1.5 text-[8px] sm:text-[9px] font-black uppercase bg-white/5 border border-white/10 rounded-md text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
+                                        className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
                                     >
                                         Match Preview
                                     </Link>
+
+                                    {/* Tooltip (Desktop Only) */}
+                                    <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] text-white text-[10px] font-medium rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible pointer-events-none z-50 shadow-xl border border-white/10 whitespace-nowrap">
+                                        Click to see expert prediction!
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#1e293b]"></div>
+                                    </div>
                                 </div>
 
-                                {/* Mobile Link Overlay */}
+                                {/* Full Link Overlay */}
                                 <Link
                                     href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                    className="absolute inset-0 z-0 sm:hidden"
+                                    className="absolute inset-0 z-0"
                                 />
                             </div>
                         );

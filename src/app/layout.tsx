@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import 'flag-icons/css/flag-icons.min.css'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {

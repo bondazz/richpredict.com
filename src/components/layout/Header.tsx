@@ -49,10 +49,10 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
             {/* 1. TOP UTILITY BAR (Very Thin) */}
             <div className="bg-[#00141e] border-b border-white/5 py-1 hidden sm:block">
                 <div className="max-w-[1240px] mx-auto w-full px-2 flex justify-between items-center">
-                    <h1 className="text-[8px] font-bold text-white uppercase tracking-widest leading-none opacity-90">
+                    <h1 className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80">
                         {title || getH1Text()}
                     </h1>
-                    <div className="flex gap-4 text-[8px] font-bold text-[var(--fs-text-dim)]">
+                    <div className="flex gap-4 text-[8px] font-medium text-[var(--fs-text-dim)]">
                         <span className="hover:text-white cursor-pointer transition-colors">MOBILE APP</span>
                         <span className="hover:text-white cursor-pointer transition-colors">ADVERTISE</span>
                     </div>
@@ -115,7 +115,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                     <svg viewBox="0 0 20 20" className={cn("w-5 h-5 transition-colors", isScoresActive ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")} fill="currentColor">
                                         <path d="M17.528,0 L20,2.471 L20,17.528 L17.531,20 L2.469,20 L0,17.528 L0,2.47 L2.473,0 L17.528,0 Z M16.958,1.373 L10.686,1.373 L10.686,18.626 L16.961,18.626 L18.625,16.959 L18.625,3.041 L16.958,1.373 Z M9.313,1.373 L3.041,1.373 L1.373,3.039 L1.373,16.959 L3.039,18.626 L9.313,18.626 L9.313,1.373 Z M4.6461,5.9522 C4.7861,5.9522 4.9171,6.0052 5.0131,6.1032 L5.0131,6.1032 L6.0211,7.1112 C6.1181,7.2082 6.1731,7.3382 6.1731,7.4792 L6.1731,7.4792 L6.1731,12.1692 C6.1731,12.2022 6.1941,12.2252 6.2271,12.2252 L6.2271,12.2252 L8.2091,12.2252 C8.2421,12.2462 8.2641,12.2462 8.2641,12.2792 L8.2641,12.2792 L8.2641,13.4812 C8.2421,13.5142 8.2421,13.5352 8.2091,13.5352 L8.2091,13.5352 L2.8251,13.5352 C2.7921,13.5352 2.7711,13.5142 2.7711,13.4812 L2.7711,13.4812 L2.7711,12.2792 C2.7711,12.2462 2.7921,12.2252 2.8251,12.2252 L2.8251,12.2252 L4.8071,12.2252 C4.8401,12.2252 4.8621,12.2022 4.8621,12.1692 L4.8621,12.1692 L4.8621,7.5232 C4.8621,7.3812 4.7421,7.2622 4.6021,7.2622 L4.6021,7.2622 L2.8251,7.2622 C2.7921,7.2622 2.7711,7.2412 2.7711,7.2082 L2.7711,7.2082 L2.7711,6.0052 C2.7711,5.9732 2.7921,5.9522 2.8251,5.9522 L2.8251,5.9522 Z M15.8925,5.9515 C16.0325,5.9515 16.1635,6.0055 16.2605,6.1035 L16.2605,6.1035 L17.2685,7.1105 C17.3655,7.2085 17.4195,7.3385 17.4195,7.4795 L17.4195,7.4795 L17.4195,12.0065 C17.4195,12.1485 17.3655,12.2785 17.2685,12.3765 L17.2685,12.3765 L16.2605,13.3835 C16.1635,13.4815 16.0325,13.5345 15.8925,13.5345 L15.8925,13.5345 L13.4545,13.5345 C13.3145,13.5345 13.1835,13.4815 13.0865,13.3835 L13.0865,13.3835 L12.0785,12.3765 C11.9815,12.2785 11.9275,12.1485 11.9275,12.0065 L11.9275,12.0065 L11.9275,7.4795 C11.9275,7.3385 11.9815,7.2085 12.0785,7.1105 L12.0785,7.1105 L13.0865,6.1035 C13.1835,6.0055 13.3145,5.9515 13.4545,5.9515 L13.4545,5.9515 Z M15.8495,7.2625 L13.4985,7.2625 C13.3465,7.2625 13.2375,7.3815 13.2375,7.5235 L13.2375,7.5235 L13.2375,11.9645 C13.2375,12.1045 13.3465,12.2255 13.4985,12.2255 L13.4985,12.2255 L15.8495,12.2255 C15.9895,12.2255 16.1085,12.1045 16.1085,11.9645 L16.1085,11.9645 L16.1085,7.5235 C16.1085,7.3815 15.9895,7.2625 15.8495,7.2625 L15.8495,7.2625 Z" />
                                     </svg>
-                                    <span className={cn("text-[11px] font-black uppercase transition-colors", isScoresActive ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")}>Scores</span>
+                                    <span className={cn("text-[11px] font-medium uppercase transition-colors", isScoresActive ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")}>Predictions</span>
                                     {isScoresActive && (
                                         <motion.div
                                             layoutId="header-active-bar"
@@ -132,9 +132,9 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                     )}
                                 >
                                     <Newspaper size={20} className={cn("transition-colors", isNewsActive ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")} />
-                                    <span className={cn("text-[11px] font-black uppercase transition-colors flex items-center gap-2", isNewsActive ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")}>
+                                    <span className={cn("text-[11px] font-medium uppercase transition-colors relative pr-9", isNewsActive ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")}>
                                         News
-                                        <span className="bg-[var(--fs-yellow)] text-black text-[8px] px-1.5 py-0.5 rounded-sm font-black whitespace-nowrap uppercase">SPORTS</span>
+                                        <span className="absolute -top-1 -right-3 bg-[var(--fs-yellow)] text-[#00141e] text-[6.5px] px-1.5 py-0.5 rounded-full font-black whitespace-nowrap uppercase shadow-[0_0_10px_rgba(255,221,0,0.2)]">SPORTS</span>
                                     </span>
                                     {isNewsActive && (
                                         <motion.div
@@ -257,9 +257,9 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                             : "border-transparent hover:bg-white/5"
                                     )}
                                 >
-                                    <sport.icon className={cn("w-[14px] h-[14px]", isSportActive ? "text-[var(--fs-yellow)]" : "text-[var(--fs-text-dim)]")} />
+                                    <sport.icon className={cn("w-[16px] h-[16px]", isSportActive ? "text-[var(--fs-yellow)]" : "text-[var(--fs-text-dim)]")} />
                                     <span className={cn(
-                                        "text-[9px] font-black uppercase tracking-wider",
+                                        "text-[10.5px] font-medium uppercase tracking-wider",
                                         isSportActive ? "text-white" : "text-[var(--fs-text-dim)]"
                                     )}>
                                         {sport.name}

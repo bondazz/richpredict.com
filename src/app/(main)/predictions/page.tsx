@@ -83,7 +83,7 @@ export default async function PredictionsPage() {
         return acc;
     }, {});
 
-    const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "Australia & Oceania"];
+    const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
 
     return (
         <div className="flex flex-col min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
@@ -107,18 +107,24 @@ export default async function PredictionsPage() {
             <main className="max-w-[1240px] mx-auto w-full px-2 py-4 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-4">
 
                 {/* Left Sidebar */}
-                <aside className="hidden lg:flex flex-col space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto pr-2 scrollbar-hide">
-                    <div className="text-[9px] font-black text-white/50 uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
+                <aside className="hidden lg:flex flex-col space-y-1 pr-2">
+                    <div className="text-[10px] font-black text-white uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
                     {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
                         <div
                             key={i}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80"
+                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
                             title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
                         >
                             {league.countries?.flag_url && (
-                                <img src={league.countries.flag_url} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] opacity-80 group-hover:opacity-100" />
+                                <div
+                                    className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 pointer-events-none select-none"
+                                    style={{ backgroundImage: `url(${league.countries.flag_url})` }}
+                                    aria-label={`${league.countries.name} flag`}
+                                />
                             )}
-                            <span className="text-[10px] font-medium truncate group-hover:text-white transition-colors">{league.name}</span>
+                            <span className="text-[11px] font-medium truncate transition-colors">
+                                {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
+                            </span>
                         </div>
                     )) : (
                         <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
@@ -126,7 +132,7 @@ export default async function PredictionsPage() {
 
                     <SidebarAd />
 
-                    <div className="pt-2 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
+                    <div className="pt-2 text-[10px] font-black text-white uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
 
                     <SidebarCountries countriesByRegion={countriesByRegion} regionOrder={regionOrder} />
                 </aside>
@@ -142,16 +148,11 @@ export default async function PredictionsPage() {
                                     <div className="flex items-center gap-3">
                                         <Star size={14} className="text-white/40 hover:text-[var(--fs-yellow)] cursor-pointer transition-colors" />
                                         <div className="flex items-center gap-2">
-                                            {league.matches[0]?.leagues?.countries?.code ? (
-                                                <Flag
-                                                    code={league.matches[0].leagues.countries.code}
-                                                    className="w-[18px] h-[12px] flex-shrink-0 rounded-[1px] shadow-sm"
-                                                />
-                                            ) : league.matches[0]?.leagues?.countries?.flag_url && (
-                                                <img
-                                                    src={league.matches[0].leagues.countries.flag_url}
-                                                    alt=""
-                                                    className="w-[18px] h-[12px] flex-shrink-0 object-cover rounded-[1px]"
+                                            {league.matches[0]?.leagues?.countries?.flag_url && (
+                                                <div
+                                                    className="w-[18px] h-[12px] flex-shrink-0 bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm pointer-events-none select-none"
+                                                    style={{ backgroundImage: `url(${league.matches[0].leagues.countries.flag_url})` }}
+                                                    aria-label={`${league.matches[0].leagues.countries.name} flag`}
                                                 />
                                             )}
                                             <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
@@ -202,11 +203,19 @@ export default async function PredictionsPage() {
                                             {/* Teams Column */}
                                             <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
                                                 <div className="flex items-center gap-2 sm:gap-2.5">
-                                                    <img src={getLogo(match.home_team)} alt={`${match.home_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" referrerPolicy="no-referrer" />
+                                                    <div
+                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
+                                                        style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
+                                                        aria-label={`${match.home_team} logo`}
+                                                    />
                                                     <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 sm:gap-2.5">
-                                                    <img src={getLogo(match.away_team)} alt={`${match.away_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" referrerPolicy="no-referrer" />
+                                                    <div
+                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
+                                                        style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
+                                                        aria-label={`${match.away_team} logo`}
+                                                    />
                                                     <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
                                                 </div>
                                             </div>
@@ -263,7 +272,7 @@ export default async function PredictionsPage() {
                                     VIP <span className="text-[var(--fs-yellow)]">PREMIUM</span>
                                 </h3>
                                 <div className="text-[9px] font-black bg-[var(--fs-yellow)]/10 text-[var(--fs-yellow)] px-2 py-0.5 rounded-sm inline-block uppercase tracking-[0.2em]">
-                                    Professional Intent
+                                    SUBSCRIBERS
                                 </div>
                             </div>
                             <p className="text-[11px] font-bold text-white/50 leading-relaxed">

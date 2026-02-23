@@ -16,6 +16,7 @@ import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, get
 import { AIPredictTrust } from "@/components/AIPredictTrust";
 import { Testimonials } from "@/components/Testimonials";
 import { RichPredictNews } from "@/components/news/RichPredictNews";
+import { SiteStatistics } from "@/components/SiteStatistics";
 
 import SidebarCountries from "@/components/SidebarCountries";
 import InnerAdBanner from "@/components/Ads/InnerAdBanner";
@@ -97,7 +98,7 @@ export default async function Home() {
         return acc;
     }, {});
 
-    const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "Australia & Oceania"];
+    const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
 
     const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
@@ -109,18 +110,24 @@ export default async function Home() {
             <main className="max-w-[1240px] mx-auto w-full px-2 py-4 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-4">
 
                 {/* Left Sidebar */}
-                <aside className="hidden lg:flex flex-col space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto pr-2 scrollbar-hide">
-                    <div className="text-[9px] font-black text-white/50 uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
+                <aside className="hidden lg:flex flex-col space-y-1 pr-2">
+                    <div className="text-[10px] font-black text-white uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
                     {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
                         <div
                             key={i}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white/80"
+                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
                             title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
                         >
                             {league.countries?.flag_url && (
-                                <img src={league.countries.flag_url} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] opacity-80 group-hover:opacity-100" />
+                                <div
+                                    className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 pointer-events-none select-none"
+                                    style={{ backgroundImage: `url(${league.countries.flag_url})` }}
+                                    aria-label={`${league.countries.name} flag`}
+                                />
                             )}
-                            <span className="text-[10px] font-medium truncate group-hover:text-white transition-colors">{league.name}</span>
+                            <span className="text-[11px] font-medium truncate transition-colors">
+                                {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
+                            </span>
                         </div>
                     )) : (
                         <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
@@ -128,7 +135,7 @@ export default async function Home() {
 
                     <SidebarAd />
 
-                    <div className="pt-2 text-[9px] font-black text-white/50 uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
+                    <div className="pt-2 text-[10px] font-black text-white uppercase tracking-wider px-2 border-t border-white/5 mt-2 font-mono">Countries</div>
 
                     <SidebarCountries countriesByRegion={countriesByRegion} regionOrder={regionOrder} />
                 </aside>
@@ -142,22 +149,16 @@ export default async function Home() {
 
                     {displayLeagues.length > 0 ? displayLeagues.map((league: any, index: number) => (
                         <React.Fragment key={league.id}>
-                            <div className="sportName soccer overflow-hidden rounded-sm border border-white/5 shadow-2xl">
+                            <div className="sportName soccer overflow-hidden rounded-xl border border-white/5 shadow-2xl">
                                 <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
                                     <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <Star size={14} className="text-white/40 hover:text-[var(--fs-yellow)] cursor-pointer transition-colors" />
                                             <div className="flex items-center gap-2">
-                                                {league.matches[0]?.leagues?.countries?.code ? (
-                                                    <Flag
-                                                        code={league.matches[0].leagues.countries.code}
-                                                        className="w-[18px] h-[12px] flex-shrink-0 rounded-[1px] shadow-sm"
-                                                    />
-                                                ) : league.matches[0]?.leagues?.countries?.flag_url && (
-                                                    <img
-                                                        src={league.matches[0].leagues.countries.flag_url}
-                                                        alt=""
-                                                        className="w-[18px] h-[12px] flex-shrink-0 object-cover rounded-[1px]"
+                                                {league.matches[0]?.leagues?.countries?.flag_url && (
+                                                    <div
+                                                        className="w-[18px] h-[12px] flex-shrink-0 bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm pointer-events-none select-none"
+                                                        style={{ backgroundImage: `url(${league.matches[0].leagues.countries.flag_url})` }}
+                                                        aria-label={`${league.matches[0].leagues.countries.name} flag`}
                                                     />
                                                 )}
                                                 <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
@@ -191,13 +192,8 @@ export default async function Home() {
 
                                         return (
                                             <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
-                                                {/* Star Column */}
-                                                <div className="w-8 sm:w-10 flex justify-center flex-shrink-0">
-                                                    <Star size={12} className="text-white/20 group-hover:text-[var(--fs-yellow)] transition-colors cursor-pointer" />
-                                                </div>
-
                                                 {/* Date/Time Column */}
-                                                <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5">
+                                                <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5 ml-2">
                                                     <span className="text-[8px] sm:text-[10px] font-black text-white/90 whitespace-nowrap">
                                                         {formattedDate}
                                                     </span>
@@ -209,35 +205,43 @@ export default async function Home() {
                                                 {/* Teams Column */}
                                                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
                                                     <div className="flex items-center gap-2 sm:gap-2.5">
-                                                        <img src={getLogo(match.home_team)} alt={`${match.home_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" referrerPolicy="no-referrer" />
+                                                        <div
+                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
+                                                            style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
+                                                            aria-label={`${match.home_team} logo`}
+                                                        />
                                                         <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 sm:gap-2.5">
-                                                        <img src={getLogo(match.away_team)} alt={`${match.away_team} logo`} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" referrerPolicy="no-referrer" />
+                                                        <div
+                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
+                                                            style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
+                                                            aria-label={`${match.away_team} logo`}
+                                                        />
                                                         <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Match Preview Column - Visible on all screens */}
-                                                <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2">
+                                                <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
                                                     <Link
                                                         href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                        className="px-2 sm:px-4 py-1.5 text-[8px] sm:text-[9px] font-black uppercase bg-white/5 border border-white/10 rounded-md text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm group-hover:scale-105"
+                                                        className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
                                                     >
                                                         Match Preview
                                                     </Link>
 
                                                     {/* Tooltip (Desktop Only) */}
-                                                    <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] text-white text-[10px] font-bold rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 shadow-xl border border-white/10">
+                                                    <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] text-white text-[10px] font-medium rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible pointer-events-none z-50 shadow-xl border border-white/10 whitespace-nowrap">
                                                         Click to see expert prediction!
                                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#1e293b]"></div>
                                                     </div>
                                                 </div>
 
-                                                {/* Mobile Link Overlay */}
+                                                {/* Full Link Overlay */}
                                                 <Link
                                                     href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                    className="absolute inset-0 z-0 sm:hidden"
+                                                    className="absolute inset-0 z-0"
                                                     aria-label={`View match preview for ${match.home_team} vs ${match.away_team}`}
                                                 />
                                             </div>
@@ -276,7 +280,7 @@ export default async function Home() {
                                     VIP <span className="text-[var(--fs-yellow)]">PREMIUM</span>
                                 </h3>
                                 <div className="text-[9px] font-black bg-[var(--fs-yellow)]/10 text-[var(--fs-yellow)] px-2 py-0.5 rounded-sm inline-block uppercase tracking-[0.2em]">
-                                    Professional Intent
+                                    SUBSCRIBERS
                                 </div>
                             </div>
                             <p className="text-[11px] font-bold text-white/50 leading-relaxed">
@@ -288,23 +292,8 @@ export default async function Home() {
                         </div>
                     </div>
 
-                    {/* Signal_Probability Section - Transparent Background */}
-                    <div className="space-y-4 px-1">
-                        <h3 className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2 italic">
-                            <Zap className="w-3 h-3 text-[var(--fs-yellow)] fill-[var(--fs-yellow)]" /> Signal_Probability
-                        </h3>
-                        {predictions.slice(0, 3).map((p, i) => (
-                            <div key={i} className="space-y-1.5">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[9px] font-black uppercase text-white/60 truncate max-w-[140px]">{p.home_team}</span>
-                                    <span className="text-[var(--fs-yellow)] font-bold font-mono text-[10px]">{p.confidence || '74%'}</span>
-                                </div>
-                                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[var(--fs-yellow)] shadow-[0_0_8px_rgba(255,228,56,0.3)]" style={{ width: p.confidence || '74%' }} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    {/* Site Statistics Section */}
+                    <SiteStatistics />
                 </aside>
             </main>
 

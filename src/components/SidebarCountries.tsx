@@ -26,7 +26,7 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
 
                 return (
                     <div key={region} className="space-y-0.5">
-                        <div className="text-[9px] font-black text-[var(--fs-yellow)]/40 uppercase px-2 py-2 mt-1">{region}</div>
+                        <div className="text-[10px] font-black text-[var(--fs-yellow)] uppercase px-2 py-2 mt-1">{region}</div>
                         {countries.map((country: any) => {
                             count++;
                             const shouldHide = !isExpanded && count > LIMIT;
@@ -36,8 +36,15 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                             return (
                                 <div
                                     key={country.id}
-                                    className="flex items-center gap-2 px-2 py-0.5 text-[10px] text-white/90 hover:text-white cursor-pointer transition-colors hover:bg-white/5 rounded-sm"
+                                    className="flex items-center gap-2 px-2 py-1 text-[11px] text-white hover:text-white cursor-pointer transition-colors hover:bg-white/5 rounded-sm group"
                                 >
+                                    {country.flag_url && (
+                                        <div
+                                            className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 transition-opacity pointer-events-none select-none"
+                                            style={{ backgroundImage: `url(${country.flag_url})` }}
+                                            aria-label={`${country.name} flag`}
+                                        />
+                                    )}
                                     <span className="truncate">{country.name}</span>
                                 </div>
                             );
@@ -61,7 +68,7 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                     onClick={() => setIsExpanded(false)}
                     className="w-full flex items-center justify-between px-2 py-2 mt-2 text-[10px] font-black uppercase text-[var(--fs-yellow)] hover:bg-white/5 transition-colors rounded-sm"
                 >
-                    <span>Daha az göstər</span>
+                    <span>Show less</span>
                     <ChevronUp size={12} />
                 </button>
             )}

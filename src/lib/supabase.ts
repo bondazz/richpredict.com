@@ -559,3 +559,72 @@ export const getFeaturedMatches = async (countryId?: string, limit = 10, categor
     const shuffled = (data || []).sort(() => 0.5 - Math.random());
     return shuffled.slice(0, limit) as Prediction[];
 }
+
+export const getSynchronizedStats = () => {
+    const now = new Date();
+    const utcMonth = now.getUTCMonth();
+    const utcYear = now.getUTCFullYear();
+    const utcDay = now.getUTCDate();
+    const utcHours = now.getUTCHours();
+    const utcMinutes = now.getUTCMinutes();
+
+    // 1. Premium Analysts Sync Logic
+    // Resets every month. Base: 186. +1-4 every 5 minutes.
+    const startOfMonth = new Date(Date.UTC(utcYear, utcMonth, 1)).getTime();
+    const elapsedMs = now.getTime() - startOfMonth;
+    const fiveMinIntervals = Math.floor(elapsedMs / (5 * 60 * 1000));
+
+    let premiumTotal = 186;
+    // Deterministically calculate the total increment since start of month
+    for (let i = 0; i < fiveMinIntervals; i++) {
+        // Pseudo-random deterministic increment (1-4)
+        premiumTotal += ((i * 17 + 11) % 4) + 1;
+    }
+
+    const lastIncrement = ((fiveMinIntervals * 17 + 11) % 4) + 1;
+
+    // Online Users Sync Logic (10s intervals)
+    // 3 steps increase, 1 step decrease pattern (or vice versa)
+    const tenSecIntervalsSinceEpoch = Math.floor(now.getTime() / 10000);
+
+    // Create a 4-step sequence (40 seconds total)
+    const stepInSequence = tenSecIntervalsSinceEpoch % 4;
+
+    // Use a daily/hourly seed to determine if this 40s block is mostly growing or shrinking
+    const hourSeed = Math.floor(now.getTime() / (3600 * 1000));
+    const blockTypeSeed = (hourSeed * 13 + Math.floor(tenSecIntervalsSinceEpoch / 40)) % 2; // Changes every ~6 mins
+
+    // Daily base
+    const dailySeed = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
+    const dailyBase = 1200 + ((dailySeed * 123) % 1200);
+
+    // Wave movement (long term cycle 15 mins)
+    const longTermCycle = (tenSecIntervalsSinceEpoch % 90) / 90;
+    const waveBase = dailyBase + Math.sin(longTermCycle * Math.PI * 2) * 800;
+
+    let onlineCount = waveBase;
+
+    if (blockTypeSeed === 0) {
+        // Growth block: 3 steps UP, 1 step DOWN
+        if (stepInSequence < 3) {
+            onlineCount += (stepInSequence * 150) + (tenSecIntervalsSinceEpoch % 30);
+        } else {
+            onlineCount += 200 - (tenSecIntervalsSinceEpoch % 40); // Small dip
+        }
+    } else {
+        // Shrink block: 3 steps DOWN, 1 step UP
+        if (stepInSequence < 3) {
+            onlineCount -= (stepInSequence * 150) + (tenSecIntervalsSinceEpoch % 30);
+        } else {
+            onlineCount -= 200 - (tenSecIntervalsSinceEpoch % 40); // Small recovery
+        }
+    }
+
+    const finalOnline = Math.max(947, Math.min(5000, Math.floor(onlineCount)));
+
+    return {
+        premium: premiumTotal,
+        online: finalOnline,
+        lastIncrement: lastIncrement
+    };
+};

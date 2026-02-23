@@ -8,7 +8,7 @@ export function AIPredictTrust() {
     const isDark = theme === "dark" || true; // Site is primarily dark
 
     return (
-        <div className="w-full overflow-hidden bg-[var(--fs-header)] border border-white/5 rounded-sm my-6 pt-12">
+        <div className="w-full overflow-hidden bg-[var(--fs-header)] border border-white/5 rounded-2xl my-6 pt-8">
             <div className="mx-auto w-full max-w-2xl px-4">
                 <div className="text-center text-2xl font-black italic tracking-tighter uppercase">
                     <span className="text-white/40">
@@ -18,18 +18,49 @@ export function AIPredictTrust() {
                     <span className="text-[var(--fs-yellow)]">10,000+ Premium Analysts</span>
                 </div>
 
-                <div className="mt-10 grid grid-cols-3 md:grid-cols-5 gap-8 items-center px-4 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
-                    <Retool />
-                    <Vercel />
-                    <Remote />
-                    <Arc />
-                    <Raycast />
+                <div className="mt-10 flex flex-wrap justify-center gap-x-4 md:gap-x-8 gap-y-8 items-center px-4 transition-all duration-500">
+                    <div
+                        className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 transition-all duration-500 select-none cursor-help"
+                        style={{ backgroundImage: 'url(/images/flashscore-logo.png.png)' }}
+                        aria-label="Flashscore"
+                        title="Flashscore"
+                    />
+                    <div
+                        className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
+                        style={{ backgroundImage: 'url(/images/beinsport-logo.svg)' }}
+                        aria-label="beIN Sports"
+                        title="beIN Sports"
+                    />
+                    <div
+                        className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
+                        style={{
+                            backgroundImage: 'url(/images/Yahoo_Sports_New_Logo.png)',
+                            filter: 'brightness(1.5) invert(0.8)'
+                        }}
+                        aria-label="Yahoo Sports"
+                        title="Yahoo Sports"
+                    />
+                    <div
+                        className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
+                        style={{ backgroundImage: 'url(/images/squawka-logo-footer.svg)' }}
+                        aria-label="Squawka"
+                        title="Squawka"
+                    />
+                    <div
+                        className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
+                        style={{
+                            backgroundImage: 'url(/images/BETMGM-logo.webp)',
+                            filter: 'brightness(1.2)'
+                        }}
+                        aria-label="BETMGM"
+                        title="BETMGM"
+                    />
                 </div>
             </div>
 
-            <div className="relative -mt-16 h-48 w-full overflow-hidden [mask-image:radial-gradient(50%_50%,white,transparent)] pointer-events-none">
+            <div className="relative -mt-16 h-40 w-full overflow-hidden [mask-image:radial-gradient(50%_50%,white,transparent)] pointer-events-none">
                 <div className="absolute inset-0 before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_bottom_center,rgba(255,228,56,0.15),transparent_70%)] before:opacity-40" />
-                <div className="absolute -left-1/2 top-1/2 aspect-[1/0.7] z-10 w-[200%] rounded-[100%] border-t border-white/5 bg-[var(--fs-bg)]" />
+                <div className="absolute -left-1/2 top-2/3 aspect-[1/0.7] z-10 w-[200%] rounded-[100%] border-t border-white/5 bg-[var(--fs-bg)]" />
                 <Sparkles
                     density={800}
                     className="absolute inset-x-0 bottom-0 h-full w-full [mask-image:radial-gradient(50%_50%,white,transparent_85%)]"

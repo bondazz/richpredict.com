@@ -10,7 +10,8 @@ import {
     Zap,
     Settings,
     Newspaper,
-    Bot
+    Bot,
+    Flag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const menuItems = [
     { name: 'Matches', href: '/admin/dashboard', icon: Trophy, active: true },
     { name: 'News', href: '/admin/news', icon: Newspaper },
     { name: 'AI Bot', href: '/admin/bot', icon: Bot },
+    { name: 'Flag Sync', href: '/admin/bot?mode=flags', icon: Flag },
     { name: 'Countries', href: '/admin/countries', icon: Globe },
     { name: 'Teams', href: '/admin/teams', icon: Users },
     { name: 'Team Scraper', href: '/admin/scraper', icon: Zap },

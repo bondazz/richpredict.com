@@ -136,7 +136,7 @@ export default async function NewsPage() {
                                     VIP <span className="text-[var(--fs-yellow)]">PREMIUM</span>
                                 </h3>
                                 <div className="text-[9px] font-black bg-[var(--fs-yellow)]/10 text-[var(--fs-yellow)] px-2 py-0.5 rounded-sm inline-block uppercase tracking-[0.2em]">
-                                    Professional Intent
+                                    SUBSCRIBERS
                                 </div>
                             </div>
                             <p className="text-[11px] font-bold text-white/50 leading-relaxed font-sans">

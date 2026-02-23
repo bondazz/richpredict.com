@@ -54,10 +54,10 @@ export const RichPredictNews = ({ posts }: Props) => {
                             {/* IMAGE - Responsive Layout (Large on desktop, Small on mobile) */}
                             <div className="relative w-[100px] md:w-full aspect-[16/9] overflow-hidden rounded-lg bg-white/5 border border-white/10 shadow-lg mb-0 md:mb-3 shrink-0">
                                 {post.image_url ? (
-                                    <img
-                                        src={post.image_url}
-                                        alt={post.title}
-                                        className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                                    <div
+                                        className="w-full h-full bg-center bg-no-repeat bg-cover transition-all duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 pointer-events-none select-none"
+                                        style={{ backgroundImage: `url(${post.image_url})` }}
+                                        aria-label={post.title}
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-white/5 bg-gradient-to-br from-black/20 to-transparent">
