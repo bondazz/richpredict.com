@@ -317,56 +317,54 @@ async function runBot() {
 
             leagueId = await syncLeagueAndFlag();
 
-            // TEAM LOGO SYNC (STRICT SINGLE ENTRY BY COUNTRY)
-            const syncTeam = async (name: string, fallback: string) => {
-                const { data: team } = await supabaseAdmin.from('teams')
-                    .select('id, logo_url')
-                    .eq('country_id', countryId)
-                    .ilike('name', name)
-                    .single();
+            // 1. HD LOGO FETCH (FORCE FROM MATCH DETAIL FIRST)
+            let homeHd = '', awayHd = '';
+            const matchPage = await context.newPage();
+            try {
+                console.log(`🔍 Navigating to Match Detail: ${match.home} vs ${match.away}`);
+                await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-                if (team) {
-                    return { id: team.id, logo_url: team.logo_url || '' };
+                // Wait for team images to appear
+                await matchPage.waitForSelector('.duelParticipant__home .participant__image', { timeout: 8000 }).catch(() => { });
+
+                homeHd = await matchPage.$eval('.duelParticipant__home img.participant__image', (img: any) => img.src).catch(() => '');
+                awayHd = await matchPage.$eval('.duelParticipant__away img.participant__image', (img: any) => img.src).catch(() => '');
+            } catch (err: any) {
+                console.log(`❌ Match page error: ${err.message}`);
+            }
+            await matchPage.close();
+
+            // 2. TEAM SYNC (GLOBAL LOOKUP BY NAME)
+            const syncTeam = async (name: string, hdUrl: string) => {
+                // Search globally by name to catch teams regardless of country/league context
+                const { data: existing } = await supabaseAdmin.from('teams')
+                    .select('id, logo_url')
+                    .ilike('name', name)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (existing) {
+                    // Update logo if we have a valid HD one and it's different or missing
+                    if (hdUrl && hdUrl.startsWith('http') && hdUrl !== existing.logo_url) {
+                        await supabaseAdmin.from('teams').update({ logo_url: hdUrl }).eq('id', existing.id);
+                        console.log(`♻️ Updated logo for existing team: ${name}`);
+                    }
+                    return existing.id;
                 } else {
+                    // Create new team with the HD logo immediately
                     const { data: nt } = await supabaseAdmin.from('teams').insert([{
                         name: name,
                         country_id: countryId,
                         league_id: leagueId || null,
-                        logo_url: fallback
+                        logo_url: hdUrl || null
                     }]).select().single();
-                    return { id: nt?.id || null, logo_url: fallback };
+                    console.log(`🆕 Created team with HD logo: ${name}`);
+                    return nt?.id || null;
                 }
             };
 
-            const homeStatus = await syncTeam(match.home, match.fallbackLogos.home || '');
-            const awayStatus = await syncTeam(match.away, match.fallbackLogos.away || '');
-
-            // HD Logo fetch (Force from Match Detail)
-            let homeHd = '', awayHd = '';
-            const matchPage = await context.newPage();
-            try {
-                console.log(`🔍 Fetching HD logos: ${match.home} vs ${match.away}`);
-                await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
-
-                // Wait specifically for images and use ultra-precise selectors to avoid wrong logos
-                await matchPage.waitForSelector('.duelParticipant__home .participant__image', { timeout: 5000 }).catch(() => { });
-
-                homeHd = await matchPage.$eval('.duelParticipant__home img.participant__image', (img: any) => img.src).catch(() => '');
-                awayHd = await matchPage.$eval('.duelParticipant__away img.participant__image', (img: any) => img.src).catch(() => '');
-
-                // Only update if we found a valid new URL and it differs from what we have
-                if (homeHd && homeHd.startsWith('http') && homeHd !== homeStatus.logo_url) {
-                    await supabaseAdmin.from('teams').update({ logo_url: homeHd }).eq('id', homeStatus.id);
-                    console.log(`🏠 HD Home Logo Updated: ${match.home}`);
-                }
-                if (awayHd && awayHd.startsWith('http') && awayHd !== awayStatus.logo_url) {
-                    await supabaseAdmin.from('teams').update({ logo_url: awayHd }).eq('id', awayStatus.id);
-                    console.log(`🚌 HD Away Logo Updated: ${match.away}`);
-                }
-            } catch (err: any) {
-                console.log(`❌ HD logo fetch failed: ${err.message}`);
-            }
-            await matchPage.close();
+            const homeId = await syncTeam(match.home, homeHd);
+            const awayId = await syncTeam(match.away, awayHd);
 
             // AI ANALYSIS
             console.log(`Consulting DeepSeek AI for ${match.home}...`);
