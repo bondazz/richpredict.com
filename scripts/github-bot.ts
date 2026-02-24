@@ -182,7 +182,7 @@ async function runBot() {
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.waitForTimeout(1000);
 
-        // 2. SCRAPE MATCH LIST
+        // 2. SCRAPE MATCH LIST (STRICT TOP-TO-BOTTOM)
         const rawMatches = await page.evaluate((limit) => {
             const results: any[] = [];
             const seenUrls = new Set();
@@ -198,21 +198,20 @@ async function runBot() {
                 const isHeader = el.classList.contains('headerLeague') || el.className.includes('leagueHeader');
 
                 if (isHeader) {
-                    const categoryEl = el.querySelector('.headerLeague__category-text, [class*="category-text"], .headerLeague__category');
-                    const titleEl = el.querySelector('.headerLeague__title, [class*="leagueHeader__title"], .headerLeague__title-text');
+                    // Precise Country Extraction
+                    const categoryTextEl = el.querySelector('.headerLeague__category-text');
+                    const categoryText = categoryTextEl ? categoryTextEl.textContent.trim() : '';
 
-                    if (titleEl) {
-                        const rawHeader = el.textContent || '';
-                        if (rawHeader.includes(':')) {
-                            const parts = rawHeader.split(':');
-                            lastCountryName = parts[0].trim();
-                            lastLeagueName = parts[1].replace('Football Tips', '').trim();
-                        } else {
-                            lastLeagueName = titleEl.textContent?.replace('Football Tips', '').trim() || lastLeagueName;
-                            lastCountryName = categoryEl?.textContent?.trim() || lastCountryName;
-                        }
-                        lastLeagueUrl = (titleEl as HTMLAnchorElement).href || (titleEl.querySelector('a') as HTMLAnchorElement)?.href || '';
-                    }
+                    // Precise League Extraction
+                    const titleTextEl = el.querySelector('.headerLeague__title-text');
+                    const titleText = titleTextEl ? titleTextEl.textContent.trim() : '';
+
+                    const leagueUrl = (el.querySelector('.headerLeague__title') as HTMLAnchorElement)?.href || '';
+
+                    if (categoryText) lastCountryName = categoryText;
+                    if (titleText) lastLeagueName = titleText;
+                    if (leagueUrl) lastLeagueUrl = leagueUrl;
+
                 } else {
                     const isMatch = el.classList.contains('event__match') || el.className.includes('event__match');
                     if (isMatch) {
@@ -255,31 +254,55 @@ async function runBot() {
             console.log(`-------------------------------------------`);
             console.log(`Syncing: ${match.home} vs ${match.away}`);
 
-            // DB Assets Sync
+            // DB Assets Sync: Country
             let countryId = '';
-            const normalizedCountry = match.countryName.toUpperCase();
-            const { data: regionMatch } = await supabaseAdmin.from('regions').select('id').ilike('name', normalizedCountry).single();
-            const targetRegionId = regionMatch?.id || defaultRegionId;
-
             const { data: existingCountry } = await supabaseAdmin.from('countries').select('id').ilike('name', match.countryName).single();
-            if (existingCountry) countryId = existingCountry.id;
-            else {
-                const { data: newCountry } = await supabaseAdmin.from('countries').insert([{ name: match.countryName, region_id: targetRegionId }]).select().single();
+
+            if (existingCountry) {
+                countryId = existingCountry.id;
+            } else {
+                const normalizedCountry = match.countryName.toUpperCase();
+                const { data: regionMatch } = await supabaseAdmin.from('regions').select('id').ilike('name', normalizedCountry).single();
+                const targetRegionId = regionMatch?.id || defaultRegionId;
+
+                const { data: newCountry } = await supabaseAdmin.from('countries').insert([{
+                    name: match.countryName,
+                    region_id: targetRegionId
+                }]).select().single();
                 countryId = newCountry?.id || '';
             }
 
             if (!countryId) continue;
 
+            // DB Assets Sync: League
             let leagueId = '';
             const { data: existingLeague } = await supabaseAdmin.from('leagues').select('id, logo_url').eq('country_id', countryId).ilike('name', match.leagueName).single();
+
             if (existingLeague) {
                 leagueId = existingLeague.id;
+                // If logo is missing, try to update it
+                if (!existingLeague.logo_url && match.leagueUrl) {
+                    const lp = await context.newPage();
+                    try {
+                        await lp.goto(match.leagueUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                        const lurl = await lp.$eval('.heading__logo', (img: any) => img.src).catch(() => '');
+                        if (lurl) {
+                            await supabaseAdmin.from('leagues').update({ logo_url: lurl }).eq('id', leagueId);
+                            console.log(`✅ Updated League Logo: ${match.leagueName}`);
+                        }
+                    } catch (e) { }
+                    await lp.close();
+                }
             } else {
                 const lp = await context.newPage();
                 try {
                     await lp.goto(match.leagueUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
                     const lurl = await lp.$eval('.heading__logo', (img: any) => img.src).catch(() => '');
-                    const { data: nl } = await supabaseAdmin.from('leagues').insert([{ name: match.leagueName, country_id: countryId, logo_url: lurl }]).select().single();
+                    const { data: nl } = await supabaseAdmin.from('leagues').insert([{
+                        name: match.leagueName,
+                        country_id: countryId,
+                        logo_url: lurl
+                    }]).select().single();
                     leagueId = nl?.id || '';
                 } catch (e) { }
                 await lp.close();
