@@ -44,14 +44,19 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
         return "AI Football Predictions, Results, EPL & Champions League";
     };
 
+    const allSports = ["football", "tennis", "basketball", "hockey", "golf", "baseball", "snooker", "volleyball", "am. football", "darts", "motorsport", "aussie rules", "esports", "netball", "badminton", "field hockey", "pesäpallo", "bandy", "floorball", "rugby league", "beach soccer", "futsal", "rugby union", "beach volleyball", "handball", "table tennis", "boxing", "horse racing", "water polo", "cricket", "kabaddi", "winter sports", "cycling", "mma"];
+    const isActuallyArticleDetail = pathname.startsWith("/news/") && !allSports.includes(pathname.replace("/news/", "").replace(/-/g, " ").toLowerCase());
+
+    const Tag = isActuallyArticleDetail ? "div" : "h1";
+
     return (
         <header className="z-50 w-full flex flex-col">
             {/* 1. TOP UTILITY BAR (Very Thin) */}
             <div className="bg-[#00141e] border-b border-white/5 py-1 hidden sm:block">
                 <div className="max-w-[1240px] mx-auto w-full px-2 flex justify-between items-center">
-                    <h1 className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80">
+                    <Tag className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80 select-none pointer-events-none">
                         {title || getH1Text()}
-                    </h1>
+                    </Tag>
                     <div className="flex gap-4 text-[8px] font-medium text-[var(--fs-text-dim)]">
                         <span className="hover:text-white cursor-pointer transition-colors">MOBILE APP</span>
                         <span className="hover:text-white cursor-pointer transition-colors">ADVERTISE</span>

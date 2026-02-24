@@ -19,6 +19,7 @@ const menuItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Matches', href: '/admin/dashboard', icon: Trophy, active: true },
     { name: 'News', href: '/admin/news', icon: Newspaper },
+    { name: 'Auto News', href: '/admin/news/auto', icon: Zap },
     { name: 'AI Bot', href: '/admin/bot', icon: Bot },
     { name: 'Flag Sync', href: '/admin/bot?mode=flags', icon: Flag },
     { name: 'Countries', href: '/admin/countries', icon: Globe },

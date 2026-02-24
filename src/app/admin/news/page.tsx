@@ -104,7 +104,7 @@ export default function NewsAdminPage() {
                                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5 w-fit">
                                             <Tag size={10} className="text-yellow-500" />
                                             <span className="text-[10px] font-black text-white/70 uppercase tracking-tighter">
-                                                {post.category || 'General'}
+                                                {post.category?.toLowerCase() === 'match preview' ? 'Football' : (post.category || 'General')}
                                             </span>
                                         </div>
                                     </td>

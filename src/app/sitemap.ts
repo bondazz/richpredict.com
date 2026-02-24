@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { getPredictions } from '@/lib/supabase'
+import { getPredictions, supabase } from '@/lib/supabase'
 import { generateSEOSlug } from '@/lib/utils'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -23,13 +23,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
 
     // Dynamic prediction routes
-    const predictions = await getPredictions(100)
+    const [predictions, news] = await Promise.all([
+        getPredictions(100),
+        supabase.from('blog_posts').select('slug, created_at').eq('published', true)
+    ]);
+
     const predictionRoutes = predictions.map((match) => ({
         url: `${baseUrl}/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`,
         lastModified: new Date(match.created_at || new Date()),
         changeFrequency: 'weekly' as const,
         priority: 0.6,
-    }))
+    }));
 
-    return [...routes, ...predictionRoutes]
+    const newsRoutes = (news.data || []).map((post) => ({
+        url: `${baseUrl}/news/${post.slug}`,
+        lastModified: new Date(post.created_at),
+        changeFrequency: 'monthly' as const,
+        priority: 0.5,
+    }));
+
+    return [...routes, ...predictionRoutes, ...newsRoutes]
 }

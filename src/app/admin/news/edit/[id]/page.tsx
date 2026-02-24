@@ -39,7 +39,7 @@ export default function EditPostPage() {
         content: '',
         excerpt: '',
         image_url: '',
-        category: 'Match Preview',
+        category: 'Football',
         published: true,
         language: 'en',
         meta_title: '',
@@ -251,11 +251,44 @@ export default function EditPostPage() {
                                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs focus:outline-none transition-all"
                                 >
-                                    <option>Match Preview</option>
-                                    <option>Transfer News</option>
-                                    <option>Betting Tips</option>
-                                    <option>Player Analysis</option>
-                                    <option>Leagues Update</option>
+                                    <optgroup label="Popular Sports">
+                                        <option>Football</option>
+                                        <option>Tennis</option>
+                                        <option>Basketball</option>
+                                        <option>Hockey</option>
+                                        <option>Golf</option>
+                                        <option>Baseball</option>
+                                        <option>Snooker</option>
+                                        <option>Volleyball</option>
+                                    </optgroup>
+                                    <optgroup label="All Sports">
+                                        <option>Am. Football</option>
+                                        <option>Darts</option>
+                                        <option>Motorsport</option>
+                                        <option>Aussie Rules</option>
+                                        <option>Esports</option>
+                                        <option>Netball</option>
+                                        <option>Badminton</option>
+                                        <option>Field Hockey</option>
+                                        <option>Pesäpallo</option>
+                                        <option>Bandy</option>
+                                        <option>Floorball</option>
+                                        <option>Rugby League</option>
+                                        <option>Beach Soccer</option>
+                                        <option>Futsal</option>
+                                        <option>Rugby Union</option>
+                                        <option>Beach Volleyball</option>
+                                        <option>Handball</option>
+                                        <option>Table Tennis</option>
+                                        <option>Boxing</option>
+                                        <option>Horse Racing</option>
+                                        <option>Water Polo</option>
+                                        <option>Cricket</option>
+                                        <option>Kabaddi</option>
+                                        <option>Winter Sports</option>
+                                        <option>Cycling</option>
+                                        <option>MMA</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <label className="flex items-center gap-3 cursor-pointer group">
