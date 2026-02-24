@@ -182,7 +182,9 @@ async function runBot() {
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.waitForTimeout(1000);
 
-        // 2. SCRAPE MATCH LIST (STRICT TOP-TO-BOTTOM)
+        // 2. WAIT FOR AND SCRAPE MATCH LIST (TARGETING #live-table)
+        await page.waitForSelector('#live-table', { timeout: 30000 });
+
         const rawMatches = await page.evaluate((limit) => {
             const results: any[] = [];
             const seenUrls = new Set();
@@ -190,7 +192,11 @@ async function runBot() {
             let lastLeagueUrl = '';
             let lastCountryName = 'International';
 
-            const allElements = document.querySelectorAll('.headerLeague, .event__match, [class*="leagueHeader"], [class*="event__match"]');
+            // Select specifically within the live-table container
+            const container = document.querySelector('#live-table');
+            if (!container) return [];
+
+            const allElements = container.querySelectorAll('.headerLeague, .event__match, [class*="leagueHeader"], [class*="event__match"]');
 
             for (const el of Array.from(allElements)) {
                 if (results.length >= limit) break;
@@ -198,29 +204,26 @@ async function runBot() {
                 const isHeader = el.classList.contains('headerLeague') || el.className.includes('leagueHeader');
 
                 if (isHeader) {
-                    // Precise Country Extraction
                     const categoryTextEl = el.querySelector('.headerLeague__category-text');
-                    const categoryText = categoryTextEl ? categoryTextEl.textContent.trim() : '';
-
-                    // Precise League Extraction
                     const titleTextEl = el.querySelector('.headerLeague__title-text');
-                    const titleText = titleTextEl ? titleTextEl.textContent.trim() : '';
-
                     const leagueUrl = (el.querySelector('.headerLeague__title') as HTMLAnchorElement)?.href || '';
 
-                    if (categoryText) lastCountryName = categoryText;
-                    if (titleText) lastLeagueName = titleText;
+                    if (categoryTextEl) lastCountryName = categoryTextEl.textContent.trim();
+                    if (titleTextEl) lastLeagueName = titleTextEl.textContent.trim();
                     if (leagueUrl) lastLeagueUrl = leagueUrl;
-
                 } else {
-                    const isMatch = el.classList.contains('event__match') || el.className.includes('event__match');
+                    const isMatch = el.classList.contains('event__match') || el.getAttribute('data-event-row') === 'true';
                     if (isMatch) {
-                        const home = el.querySelector('.event__homeParticipant .wcl-name_jjfMf, [class*="homeParticipant"] .wcl-name')?.textContent?.trim();
-                        const away = el.querySelector('.event__awayParticipant .wcl-name_jjfMf, [class*="awayParticipant"] .wcl-name')?.textContent?.trim();
-                        const time = el.querySelector('.event__time, [class*="event__time"]')?.textContent?.trim() || '21:00';
-                        const matchUrl = (el.querySelector('.eventRowLink, a[class*="eventRowLink"]') as HTMLAnchorElement)?.href;
-                        const homeLogo = el.querySelector('.event__homeParticipant img, [class*="homeParticipant"] img')?.getAttribute('src');
-                        const awayLogo = el.querySelector('.event__awayParticipant img, [class*="awayParticipant"] img')?.getAttribute('src');
+                        const homeEl = el.querySelector('.event__homeParticipant');
+                        const awayEl = el.querySelector('.event__awayParticipant');
+
+                        const home = homeEl?.querySelector('.wcl-name_jjfMf, .wcl-scores_Na715')?.textContent?.trim();
+                        const away = awayEl?.querySelector('.wcl-name_jjfMf, .wcl-scores_Na715')?.textContent?.trim();
+                        const time = el.querySelector('.event__time')?.textContent?.trim() || '21:00';
+                        const matchUrl = (el.querySelector('.eventRowLink') as HTMLAnchorElement)?.href;
+
+                        const homeLogo = homeEl?.querySelector('img')?.getAttribute('src');
+                        const awayLogo = awayEl?.querySelector('img')?.getAttribute('src');
 
                         if (home && away && matchUrl && !seenUrls.has(matchUrl)) {
                             seenUrls.add(matchUrl);
