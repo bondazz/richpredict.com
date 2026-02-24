@@ -308,36 +308,50 @@ async function runBot() {
                 await lp.close();
             }
 
-            // TEAM LOGO SYNC
-            const syncTeam = async (name: string, fallbackLogo: string) => {
-                const { data: team } = await supabaseAdmin.from('teams').select('id, logo_url').eq('country_id', countryId).ilike('name', name).single();
+            // TEAM LOGO SYNC (STRICT SINGLE ENTRY BY COUNTRY)
+            const syncTeam = async (name: string) => {
+                const { data: team } = await supabaseAdmin.from('teams')
+                    .select('id, logo_url')
+                    .eq('country_id', countryId)
+                    .ilike('name', name)
+                    .single();
+
                 if (team) {
-                    return { id: team.id, hasLogo: !!team.logo_url };
+                    return { id: team.id, logo_url: team.logo_url || '' };
                 } else {
                     const { data: nt } = await supabaseAdmin.from('teams').insert([{
-                        name: name, country_id: countryId, league_id: leagueId || null, logo_url: fallbackLogo
+                        name: name,
+                        country_id: countryId,
+                        league_id: leagueId || null
                     }]).select().single();
-                    return { id: nt?.id || null, hasLogo: !!fallbackLogo };
+                    return { id: nt?.id || null, logo_url: '' };
                 }
             };
 
-            const homeStatus = await syncTeam(match.home, match.fallbackLogos.home || '');
-            const awayStatus = await syncTeam(match.away, match.fallbackLogos.away || '');
+            const homeStatus = await syncTeam(match.home);
+            const awayStatus = await syncTeam(match.away);
 
-            // HD Logo fetch
+            // HD Logo fetch (Force from Match Detail)
             let homeHd = '', awayHd = '';
-            if (!homeStatus.hasLogo || !awayStatus.hasLogo) {
-                const matchPage = await context.newPage();
-                try {
-                    await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-                    homeHd = await matchPage.$eval('.duelParticipant__home .participant__image', (img: any) => img.src).catch(() => '');
-                    awayHd = await matchPage.$eval('.duelParticipant__away .participant__image', (img: any) => img.src).catch(() => '');
+            const matchPage = await context.newPage();
+            try {
+                console.log(`Fetching HD logos from match detail: ${match.home} vs ${match.away}`);
+                await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-                    if (homeHd && !homeStatus.hasLogo) await supabaseAdmin.from('teams').update({ logo_url: homeHd }).eq('id', homeStatus.id);
-                    if (awayHd && !awayStatus.hasLogo) await supabaseAdmin.from('teams').update({ logo_url: awayHd }).eq('id', awayStatus.id);
-                } catch (err) { }
-                await matchPage.close();
-            }
+                // Selectors updated based on user's HTML
+                homeHd = await matchPage.$eval('.duelParticipant__home .participant__image', (img: any) => img.src).catch(() => '');
+                awayHd = await matchPage.$eval('.duelParticipant__away .participant__image', (img: any) => img.src).catch(() => '');
+
+                if (homeHd && (homeHd !== homeStatus.logo_url)) {
+                    await supabaseAdmin.from('teams').update({ logo_url: homeHd }).eq('id', homeStatus.id);
+                    console.log(`✅ Updated Home Logo: ${match.home}`);
+                }
+                if (awayHd && (awayHd !== awayStatus.logo_url)) {
+                    await supabaseAdmin.from('teams').update({ logo_url: awayHd }).eq('id', awayStatus.id);
+                    console.log(`✅ Updated Away Logo: ${match.away}`);
+                }
+            } catch (err) { }
+            await matchPage.close();
 
             // AI ANALYSIS
             console.log(`Consulting DeepSeek AI for ${match.home}...`);
