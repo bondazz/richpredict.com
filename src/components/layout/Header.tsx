@@ -28,20 +28,20 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
     const isScoresActive = !isNewsActive && !pathname.startsWith("/admin");
 
     const getH1Text = () => {
-        if (pathname === "/") return "AI Football Predictions, Results, EPL & Champions League";
+        if (pathname === "/") return "Football Predictions, Results, EPL & Champions League";
         if (pathname === "/recommended") return "Premium Partners & Resources";
         if (pathname.startsWith("/news")) return "Sports news, interviews, highlights, rumours, scores and statistics";
-        if (pathname.startsWith("/predictions")) return "AI-Powered Football Predictions & Match Analytics";
+        if (pathname.startsWith("/predictions")) return "Football Predictions & Match Analytics";
 
         // Handle sports paths like /tennis, /basketball etc.
         const sportName = pathname.substring(1); // Get name from /name
         const validSports = ["football", "tennis", "basketball", "hockey", "golf", "baseball", "snooker", "volleyball"];
         if (validSports.includes(sportName)) {
             const capitalized = sportName.charAt(0).toUpperCase() + sportName.slice(1);
-            return `AI ${capitalized} Predictions, Results & Match Analytics`;
+            return `${capitalized} Predictions, Results & Match Analytics`;
         }
 
-        return "AI Football Predictions, Results, EPL & Champions League";
+        return "Football Predictions, Results, EPL & Champions League";
     };
 
     const allSports = ["football", "tennis", "basketball", "hockey", "golf", "baseball", "snooker", "volleyball", "am. football", "darts", "motorsport", "aussie rules", "esports", "netball", "badminton", "field hockey", "pesäpallo", "bandy", "floorball", "rugby league", "beach soccer", "futsal", "rugby union", "beach volleyball", "handball", "table tennis", "boxing", "horse racing", "water polo", "cricket", "kabaddi", "winter sports", "cycling", "mma"];

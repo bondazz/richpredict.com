@@ -15,8 +15,8 @@ import { Flag } from "@/components/ui/Flag";
 import DateNavigator from "@/components/layout/DateNavigator";
 
 export const metadata: Metadata = {
-    title: "Football Predictions & AI Match Analytics | RICHPREDICT",
-    description: "Get the most accurate AI-powered football predictions, win probabilities, and deep match analytics for all major leagues globally.",
+    title: "Football Predictions & Expert Match Analytics | RICHPREDICT",
+    description: "Get the most accurate football predictions, win probabilities, and deep match analytics for all major leagues globally.",
     alternates: {
         canonical: "https://richpredict.com/predictions",
     },

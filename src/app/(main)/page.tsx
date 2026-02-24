@@ -2,8 +2,32 @@ import React from 'react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
+    title: 'Football Predictions, Results, EPL & Champions League | RichPredict',
+    description: 'Get free football predictions, match results, and expert betting tips for Premier League, Champions League, and all major sports leagues worldwide.',
     alternates: {
         canonical: 'https://richpredict.com',
+    },
+    openGraph: {
+        title: 'Football Predictions, Results, EPL & Champions League | RichPredict',
+        description: 'Get free football predictions, match results, and expert betting tips for Premier League, Champions League, and all major sports leagues worldwide.',
+        url: 'https://richpredict.com',
+        siteName: 'RichPredict',
+        locale: 'en_US',
+        type: 'website',
+        images: [
+            {
+                url: 'https://richpredict.com/logo.png', // Logo as OG image
+                width: 1200,
+                height: 630,
+                alt: 'RichPredict - Premium Sports Predictions',
+            }
+        ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'RichPredict | Sports Predictions & Results',
+        description: 'Expert sports predictions and match analytics for football, tennis, and more.',
+        images: ['https://richpredict.com/logo.png'],
     },
 };
 
@@ -108,6 +132,80 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 
     return (
         <div className="flex flex-col min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
+            {/* SEO Structured Data */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify([
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "Organization",
+                            "name": "RichPredict",
+                            "url": "https://richpredict.com",
+                            "logo": "https://richpredict.com/logo.png",
+                            "sameAs": [
+                                "https://twitter.com/richpredict",
+                                "https://facebook.com/richpredict"
+                            ],
+                            "description": "Premium sports prediction platform providing expert match analysis and betting tips."
+                        },
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "WebPage",
+                            "name": "Football Predictions, Results, EPL & Champions League | RichPredict",
+                            "description": "Expert football predictions and match results for Premier League, Champions League, and global sports leagues.",
+                            "url": "https://richpredict.com"
+                        },
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "CollectionPage",
+                            "name": "Live Sports Predictions & Match Analytics",
+                            "description": "A collection of the latest sports predictions and expert betting insights."
+                        },
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "ItemList",
+                            "name": "Latest Football Match Predictions",
+                            "itemListElement": predictions.slice(0, 5).map((p, i) => ({
+                                "@type": "ListItem",
+                                "position": i + 1,
+                                "name": `${p.home_team} vs ${p.away_team} - ${p.league}`,
+                                "url": `https://richpredict.com/predictions/${generateSEOSlug(p.home_team, p.away_team, p.slug)}`
+                            }))
+                        },
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "FAQPage",
+                            "mainEntity": [
+                                {
+                                    "@type": "Question",
+                                    "name": "What are the most accurate football predictions today?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "content": "RichPredict provides highly accurate football predictions for today's matches, covering EPL, Champions League, and major European leagues using expert analysis."
+                                    }
+                                },
+                                {
+                                    "@type": "Question",
+                                    "name": "Are the betting tips on RichPredict free?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "content": "Yes, RichPredict offers free expert betting tips and match previews for a wide range of football matches and other sports."
+                                    }
+                                },
+                                {
+                                    "@type": "Question",
+                                    "name": "How do you calculate match outcomes?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "content": "Our match outcomes are calculated using a combination of deep statistical analysis, team form, injury reports, and historical head-to-head records."
+                                    }
+                                }
+                            ]
+                        }
+                    ])
+                }}
+            />
             {/* Premium Animated Global Ticker */}
             <TopTicker />
 

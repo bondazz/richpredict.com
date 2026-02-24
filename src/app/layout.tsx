@@ -5,12 +5,31 @@ import { cn } from '@/lib/utils'
 export const metadata: Metadata = {
     metadataBase: new URL('https://richpredict.com'),
     title: {
-        default: 'RichPredict | AI Sports Predictions',
+        default: 'RichPredict | Sports Predictions, Scores & Results',
         template: '%s | RichPredict'
     },
-    description: 'Advanced AI-powered sports predictions and betting tips.',
+    description: 'Expert football predictions, live scores, and match results for EPL, Champions League, and global leagues.',
     alternates: {
         canonical: '/',
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
+    appleWebApp: {
+        capable: true,
+        title: 'RichPredict',
+        statusBarStyle: 'default',
+    },
+    other: {
+        'mobile-web-app-capable': 'yes',
     },
 }
 
