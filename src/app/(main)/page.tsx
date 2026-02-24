@@ -24,8 +24,12 @@ import SidebarAd from "@/components/Ads/SidebarAd";
 import TopTicker from "@/components/layout/TopTicker";
 import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches";
 import { Flag } from "@/components/ui/Flag";
+import DateNavigator from "@/components/layout/DateNavigator";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+    const sp = await searchParams;
+    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
+
     let predictions: Prediction[] = [];
     let regions: any[] = [];
     let pinnedLeagues: any[] = [];
@@ -37,7 +41,7 @@ export default async function Home() {
 
     try {
         const [preds, regs, pinned, countries, pCount, teams, blogs] = await Promise.all([
-            getPredictions(300, 'Football'),
+            getPredictions(300, 'Football', selectedDate),
             getRegions(),
             getPinnedLeagues(),
             getCountriesByRegion(),
@@ -144,6 +148,9 @@ export default async function Home() {
                 <div className="space-y-3">
                     {/* High-Performance Premium Inner Ad Banner */}
                     <InnerAdBanner />
+
+                    {/* Date Navigation for filtering */}
+                    <DateNavigator />
 
                     <PremiumLockedMatches sport="FOOTBALL" count={premiumCount} />
 

@@ -204,83 +204,68 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                             </div>
                         </div>
 
-                        <div className="bg-[#001e28] p-4 md:py-10 md:px-12 relative overflow-hidden flex flex-col items-center">
-                            {/* Premium Intelligence Background Pattern */}
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+                        <div className="bg-[#001e28] relative overflow-hidden flex flex-col items-center">
+                            {/* Hanging Date Badge */}
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+                                <div className="bg-[#0b242e] border-x border-b border-white/10 px-3 py-1 rounded-b-lg flex items-center gap-3 shadow-lg">
+                                    <div className="flex items-center gap-1.5">
+                                        <Calendar size={9} className="text-[var(--fs-yellow)]" />
+                                        <span className="text-[9px] font-bold text-white font-mono">{match.match_date?.split('T')[0]}</span>
+                                    </div>
+                                    <div className="w-[1px] h-2 bg-white/10" />
+                                    <div className="flex items-center gap-1.5">
+                                        <Clock size={9} className="text-[var(--fs-yellow)]" />
+                                        <span className="text-[9px] font-bold text-white font-mono">{match.match_time || "21:00"}</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                            {/* Soft Corner Glows */}
-                            <div className="absolute top-0 left-0 w-80 h-80 bg-[var(--fs-yellow)]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-                            <div className="absolute bottom-0 right-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
+                            {/* Premium Background Pattern */}
+                            <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
 
-                            <div className="max-w-4xl w-full flex items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 relative z-10">
+                            <div className="max-w-4xl w-full px-4 pt-10 pb-6 md:pt-14 md:pb-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 relative z-10">
                                 {/* Home Team */}
-                                <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 flex-1 min-w-0">
-                                    <div className="relative">
+                                <div className="flex flex-col items-center text-center space-y-3">
+                                    <div className="relative group/logo">
+                                        <div className="absolute inset-0 bg-white/5 rounded-full blur-xl" />
                                         <div
-                                            className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 bg-center bg-no-repeat bg-contain relative z-10 drop-shadow-2xl pointer-events-none select-none"
+                                            className="w-14 h-14 md:w-20 md:h-20 bg-center bg-no-repeat bg-contain relative z-10 drop-shadow-lg pointer-events-none select-none"
                                             style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
                                             aria-label={`${match.home_team} logo`}
                                         />
                                     </div>
-                                    <h2 className="text-[9px] sm:text-xs md:text-xl font-black uppercase text-white tracking-tighter leading-none font-outfit truncate w-full px-1">{match.home_team}</h2>
+                                    <h2 className="text-[10px] md:text-[14px] font-black uppercase text-white tracking-[0.1em] leading-none">{match.home_team}</h2>
                                 </div>
 
-                                {/* Center Signal Cluster */}
-                                <div className="flex flex-col items-center justify-center space-y-3 md:space-y-6 flex-shrink-0">
-                                    {/* Consolidated Date & Time */}
-                                    <div className="flex items-center gap-1.5 md:gap-3 bg-white/5 border border-white/5 px-2 md:px-4 py-1 md:py-1.5 rounded-full">
-                                        <div className="flex items-center gap-1 md:gap-1.5">
-                                            <Calendar size={8} className="text-[var(--fs-yellow)] md:w-2.5 md:h-2.5" />
-                                            <span className="text-[7px] md:text-[9px] font-black text-white/60 font-mono">{match.match_date?.split('T')[0]}</span>
-                                        </div>
-                                        <div className="w-[1px] h-2 md:h-3 bg-white/10" />
-                                        <div className="flex items-center gap-1 md:gap-1.5">
-                                            <Clock size={8} className="text-[var(--fs-yellow)] md:w-2.5 md:h-2.5" />
-                                            <span className="text-[7px] md:text-[9px] font-black text-white/60 font-mono">{match.match_time || "21:00"}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Refined Prediction Chip */}
-                                    <div className="relative max-w-[100px] sm:max-w-[150px] md:max-w-[200px] w-full">
-                                        <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--fs-yellow)]/10 to-cyan-500/10 rounded-lg md:rounded-xl opacity-50" />
-                                        <div className="relative bg-[#0b242e] border border-white/10 p-1.5 md:p-4 rounded-lg md:rounded-xl flex flex-col items-center gap-1 md:gap-3 shadow-2xl overflow-hidden">
-                                            <div className="absolute top-0 right-0 text-[10px] md:text-[18px] font-black text-white/5 -mr-1 -mt-1 md:-mr-2 md:-mt-2 italic select-none">AI</div>
-
-                                            <div className="flex items-center gap-1 md:gap-2">
-                                                <div className="size-3 md:size-6 bg-[var(--fs-yellow)] rounded md:rounded-lg flex items-center justify-center">
-                                                    <Zap size={8} className="text-black fill-black md:w-3 md:h-3" />
-                                                </div>
-                                                <span className="text-[8px] sm:text-xs md:text-base font-black text-white uppercase tracking-tight whitespace-nowrap">{match.prediction}</span>
-                                            </div>
-
-                                            <div className="w-full space-y-0.5 md:space-y-1 hidden sm:block">
-                                                <div className="flex justify-between items-center text-[6px] md:text-[8px] font-black text-white/40 uppercase">
-                                                    <span>Signal</span>
-                                                    <span className="text-[var(--fs-yellow)]">{match.confidence || "82%"}</span>
-                                                </div>
-                                                <div className="h-0.5 md:h-1 bg-white/5 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-[var(--fs-yellow)] to-amber-400"
-                                                        style={{ width: match.confidence || '82%' }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="text-xs md:text-4xl font-black italic text-white/[0.03] font-outfit select-none pointer-events-none">VS</div>
+                                {/* Center VS */}
+                                <div className="flex flex-col items-center justify-center">
+                                    <div className="text-3xl md:text-5xl font-black italic text-white/[0.04] font-outfit select-none pointer-events-none tracking-tighter">VS</div>
+                                    <div className="h-12 w-[1px] bg-gradient-to-b from-transparent via-white/10 to-transparent mt-2 hidden md:block" />
                                 </div>
 
                                 {/* Away Team */}
-                                <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 flex-1 min-w-0">
-                                    <div className="relative">
+                                <div className="flex flex-col items-center text-center space-y-3">
+                                    <div className="relative group/logo">
+                                        <div className="absolute inset-0 bg-white/5 rounded-full blur-xl" />
                                         <div
-                                            className="w-10 h-10 sm:w-16 sm:h-16 md:w-32 md:h-32 bg-center bg-no-repeat bg-contain relative z-10 drop-shadow-2xl pointer-events-none select-none"
+                                            className="w-14 h-14 md:w-20 md:h-20 bg-center bg-no-repeat bg-contain relative z-10 drop-shadow-lg pointer-events-none select-none"
                                             style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
                                             aria-label={`${match.away_team} logo`}
                                         />
                                     </div>
-                                    <h2 className="text-[9px] sm:text-xs md:text-xl font-black uppercase text-white tracking-tighter leading-none font-outfit truncate w-full px-1">{match.away_team}</h2>
+                                    <h2 className="text-[10px] md:text-[14px] font-black uppercase text-white tracking-[0.1em] leading-none">{match.away_team}</h2>
+                                </div>
+                            </div>
+
+                            {/* Main Prediction Bar (Bottom) - Ultra Compact & Slim */}
+                            <div className="w-full bg-[#02111a] border-t border-white/5 py-2 md:py-2.5 flex items-center justify-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-5 md:size-6 bg-[var(--fs-yellow)] rounded-full flex items-center justify-center shadow-md">
+                                        <ShieldCheck size={12} className="text-black md:w-4 md:h-4" strokeWidth={2.5} />
+                                    </div>
+                                    <span className="text-[11px] md:text-[14px] font-black text-white uppercase tracking-[0.15em] font-outfit">
+                                        {match.prediction}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -348,14 +333,14 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
                                 <Trophy className="w-6 h-6 text-black" strokeWidth={2.5} />
                             </div>
                             <div className="space-y-1">
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-white font-[Klapt]">
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-white font-outfit">
                                     VIP <span className="text-[var(--fs-yellow)]">PREMIUM</span>
                                 </h3>
                                 <div className="text-[9px] font-black bg-[var(--fs-yellow)]/10 text-[var(--fs-yellow)] px-2 py-0.5 rounded-sm inline-block uppercase tracking-[0.2em]">
                                     SUBSCRIBERS
                                 </div>
                             </div>
-                            <button className="w-full bg-[var(--fs-yellow)] text-black py-3 rounded-lg text-[11px] font-[Klapt] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(255,221,0,0.15)] flex items-center justify-center gap-2">
+                            <button className="w-full bg-[var(--fs-yellow)] text-black py-3 rounded-lg text-[11px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(255,221,0,0.15)] flex items-center justify-center gap-2 font-outfit">
                                 UNLOCK ACCESS <ArrowRight size={14} />
                             </button>
                         </div>

@@ -147,45 +147,8 @@ export const getPremiumPredictionsCount = async (sport: string) => {
     return count || 0;
 }
 
-export const getPredictions = async (limit = 50, category?: string) => {
+export const getPredictions = async (limit = 50, category?: string, date?: string) => {
     // Stage 1: Try with category filter if specified
-    if (category) {
-        let query = supabase
-            .from('predictions')
-            .select(`
-                *,
-                leagues (
-                    name,
-                    logo_url,
-                    countries (
-                        name,
-                        flag_url,
-                        code
-                    )
-                )
-            `)
-            .order('match_date', { ascending: false })
-            .limit(limit);
-
-        // Exclude premium matches from the regular list
-        query = query.or('is_premium.is.null,is_premium.eq.false');
-
-        if (category.toLowerCase() === 'football') {
-            query = query.or(`category.ilike.Football,category.is.null`);
-        } else {
-            query = query.ilike('category', category);
-        }
-
-        const { data, error } = await query;
-
-        // If no error, return result
-        if (!error) return data as Prediction[];
-
-        // If error is about the join (42703 or similar), fallback to simple select
-        console.warn('Falling back to simple select due to missing league_id link:', error.message);
-    }
-
-    // Stage 2: Fallback to simple query
     let query = supabase
         .from('predictions')
         .select(`
@@ -203,24 +166,48 @@ export const getPredictions = async (limit = 50, category?: string) => {
         .order('match_date', { ascending: false })
         .limit(limit);
 
-    const { data: finalData, error: finalError } = await query;
-
-    if (finalError) {
-        // Absolute fallback if relational query fails entirely
-        const { data: rawData, error: rawError } = await supabase
-            .from('predictions')
-            .select('*')
-            .order('match_date', { ascending: false })
-            .limit(limit);
-
-        if (rawError) {
-            console.warn('Error fetching predictions even in absolute fallback:', rawError.message || rawError);
-            return [];
-        }
-        return rawData as Prediction[];
+    // Filter by date if provided (match_date is TIMESTAMP or DATE)
+    if (date) {
+        query = query.eq('match_date', date);
+        // If it's a timestamp, we might need a range, but usually it's stored as DATE or we handle it via eq if exactly matched
+        // or we can do: .gte('match_date', `${date}T00:00:00Z`).lt('match_date', `${date}T23:59:59Z`)
     }
 
-    return finalData as Prediction[];
+    // Exclude premium matches from the regular list
+    query = query.or('is_premium.is.null,is_premium.eq.false');
+
+    if (category) {
+        if (category.toLowerCase() === 'football') {
+            query = query.or(`category.ilike.Football,category.is.null`);
+        } else {
+            query = query.ilike('category', category);
+        }
+    }
+
+    const { data, error } = await query;
+
+    if (!error) return data as Prediction[];
+
+    // Fallback if relational query fails
+    console.warn('Falling back to simple select:', error.message);
+    let simpleQuery = supabase
+        .from('predictions')
+        .select('*')
+        .order('match_date', { ascending: false })
+        .limit(limit);
+
+    if (date) simpleQuery = simpleQuery.eq('match_date', date);
+    if (category) {
+        if (category.toLowerCase() === 'football') {
+            simpleQuery = simpleQuery.or(`category.ilike.Football,category.is.null`);
+        } else {
+            simpleQuery = simpleQuery.ilike('category', category);
+        }
+    }
+
+    const { data: rawData, error: rawError } = await simpleQuery;
+    if (rawError) return [];
+    return rawData as Prediction[];
 }
 
 export const getBlogPosts = async (limit = 20) => {

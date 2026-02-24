@@ -11,9 +11,11 @@ import TopTicker from "@/components/layout/TopTicker";
 import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches";
 import { Flag } from "@/components/ui/Flag";
 import { Metadata } from 'next';
+import DateNavigator from "@/components/layout/DateNavigator";
 
 interface Props {
     params: Promise<{ sport: string }>;
+    searchParams: Promise<{ date?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -28,8 +30,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default async function SportPage({ params }: Props) {
+export default async function SportPage({ params, searchParams }: Props) {
     const { sport: sportParam } = await params;
+    const sp = await searchParams;
+    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
+
     const sportSlug = sportParam.toLowerCase();
     const sportName = sportSlug.charAt(0).toUpperCase() + sportSlug.slice(1);
 
@@ -54,7 +59,7 @@ export default async function SportPage({ params }: Props) {
 
     try {
         const [preds, regs, pinned, countries, pCount, teams] = await Promise.all([
-            getPredictions(50, sportName), // Filter by sport name (e.g., "Tennis")
+            getPredictions(50, sportName, selectedDate), // Filter by sport name and date
             getRegions(),
             getPinnedLeagues(),
             getCountriesByRegion(),
@@ -150,6 +155,8 @@ export default async function SportPage({ params }: Props) {
                 {/* Main Content */}
                 <div className="space-y-3">
                     <InnerAdBanner />
+
+                    <DateNavigator />
 
                     <PremiumLockedMatches sport={sportName.toUpperCase()} count={premiumCount} />
 

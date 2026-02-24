@@ -12,6 +12,7 @@ import SidebarCountries from "@/components/SidebarCountries";
 import InnerAdBanner from "@/components/Ads/InnerAdBanner";
 import SidebarAd from "@/components/Ads/SidebarAd";
 import { Flag } from "@/components/ui/Flag";
+import DateNavigator from "@/components/layout/DateNavigator";
 
 export const metadata: Metadata = {
     title: "Football Predictions & AI Match Analytics | RICHPREDICT",
@@ -21,7 +22,10 @@ export const metadata: Metadata = {
     },
 };
 
-export default async function PredictionsPage() {
+export default async function PredictionsPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+    const sp = await searchParams;
+    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
+
     let predictions: Prediction[] = [];
     let pinnedLeagues: any[] = [];
     let allCountries: any[] = [];
@@ -29,7 +33,7 @@ export default async function PredictionsPage() {
 
     try {
         const [preds, pinned, countries, teams] = await Promise.all([
-            getPredictions(100), // More for predictions page
+            getPredictions(100, undefined, selectedDate), // More for predictions page
             getPinnedLeagues(),
             getCountriesByRegion(),
             getTeams()
@@ -140,6 +144,8 @@ export default async function PredictionsPage() {
                 {/* Main Content */}
                 <div className="space-y-3">
                     <InnerAdBanner />
+
+                    <DateNavigator />
 
                     {displayLeagues.length > 0 ? displayLeagues.map((league: any) => (
                         <div key={league.id} className="sportName soccer overflow-hidden rounded-sm border border-white/5 shadow-2xl">
