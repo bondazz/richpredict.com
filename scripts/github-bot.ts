@@ -259,7 +259,7 @@ async function runBot() {
 
             // DB Assets Sync: Country
             let countryId = '';
-            const { data: existingCountry } = await supabaseAdmin.from('countries').select('id').ilike('name', match.countryName).single();
+            const { data: existingCountry } = await supabaseAdmin.from('countries').select('id, flag_url').ilike('name', match.countryName).single();
 
             if (existingCountry) {
                 countryId = existingCountry.id;
@@ -277,42 +277,48 @@ async function runBot() {
 
             if (!countryId) continue;
 
-            // DB Assets Sync: League
+            // DB Assets Sync: League & Country Flag update
             let leagueId = '';
             const { data: existingLeague } = await supabaseAdmin.from('leagues').select('id, logo_url').eq('country_id', countryId).ilike('name', match.leagueName).single();
 
-            if (existingLeague) {
-                leagueId = existingLeague.id;
-                // If logo is missing, try to update it
-                if (!existingLeague.logo_url && match.leagueUrl) {
-                    const lp = await context.newPage();
-                    try {
-                        await lp.goto(match.leagueUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-                        const lurl = await lp.$eval('.heading__logo', (img: any) => img.src).catch(() => '');
-                        if (lurl) {
-                            await supabaseAdmin.from('leagues').update({ logo_url: lurl }).eq('id', leagueId);
-                            console.log(`✅ Updated League Logo: ${match.leagueName}`);
-                        }
-                    } catch (e) { }
-                    await lp.close();
-                }
-            } else {
+            const syncLeagueAndFlag = async () => {
                 const lp = await context.newPage();
                 try {
-                    await lp.goto(match.leagueUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                    await lp.goto(match.leagueUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
                     const lurl = await lp.$eval('.heading__logo', (img: any) => img.src).catch(() => '');
-                    const { data: nl } = await supabaseAdmin.from('leagues').insert([{
-                        name: match.leagueName,
-                        country_id: countryId,
-                        logo_url: lurl
-                    }]).select().single();
-                    leagueId = nl?.id || '';
-                } catch (e) { }
-                await lp.close();
-            }
+                    const furl = await lp.$eval('.heading__flag img, img.heading__flag, .breadcrumb__flag img', (img: any) => img.src).catch(() => '');
+
+                    if (furl) {
+                        await supabaseAdmin.from('countries').update({ flag_url: furl }).eq('id', countryId);
+                        console.log(`🏳️ Updated Country Flag: ${match.countryName}`);
+                    }
+
+                    if (existingLeague) {
+                        if (!existingLeague.logo_url && lurl) {
+                            await supabaseAdmin.from('leagues').update({ logo_url: lurl }).eq('id', existingLeague.id);
+                            console.log(`✅ Updated League Logo: ${match.leagueName}`);
+                        }
+                        return existingLeague.id;
+                    } else {
+                        const { data: nl } = await supabaseAdmin.from('leagues').insert([{
+                            name: match.leagueName,
+                            country_id: countryId,
+                            logo_url: lurl
+                        }]).select().single();
+                        return nl?.id || '';
+                    }
+                } catch (e: any) {
+                    console.log(`⚠️ League sync failed for ${match.leagueName}: ${e.message}`);
+                    return existingLeague?.id || '';
+                } finally {
+                    await lp.close();
+                }
+            };
+
+            leagueId = await syncLeagueAndFlag();
 
             // TEAM LOGO SYNC (STRICT SINGLE ENTRY BY COUNTRY)
-            const syncTeam = async (name: string) => {
+            const syncTeam = async (name: string, fallback: string) => {
                 const { data: team } = await supabaseAdmin.from('teams')
                     .select('id, logo_url')
                     .eq('country_id', countryId)
@@ -325,35 +331,41 @@ async function runBot() {
                     const { data: nt } = await supabaseAdmin.from('teams').insert([{
                         name: name,
                         country_id: countryId,
-                        league_id: leagueId || null
+                        league_id: leagueId || null,
+                        logo_url: fallback
                     }]).select().single();
-                    return { id: nt?.id || null, logo_url: '' };
+                    return { id: nt?.id || null, logo_url: fallback };
                 }
             };
 
-            const homeStatus = await syncTeam(match.home);
-            const awayStatus = await syncTeam(match.away);
+            const homeStatus = await syncTeam(match.home, match.fallbackLogos.home || '');
+            const awayStatus = await syncTeam(match.away, match.fallbackLogos.away || '');
 
             // HD Logo fetch (Force from Match Detail)
             let homeHd = '', awayHd = '';
             const matchPage = await context.newPage();
             try {
-                console.log(`Fetching HD logos from match detail: ${match.home} vs ${match.away}`);
-                await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+                console.log(`🔍 Fetching HD logos: ${match.home} vs ${match.away}`);
+                await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
 
-                // Selectors updated based on user's HTML
-                homeHd = await matchPage.$eval('.duelParticipant__home .participant__image', (img: any) => img.src).catch(() => '');
-                awayHd = await matchPage.$eval('.duelParticipant__away .participant__image', (img: any) => img.src).catch(() => '');
+                // Wait specifically for images and use ultra-precise selectors to avoid wrong logos
+                await matchPage.waitForSelector('.duelParticipant__home .participant__image', { timeout: 5000 }).catch(() => { });
 
-                if (homeHd && (homeHd !== homeStatus.logo_url)) {
+                homeHd = await matchPage.$eval('.duelParticipant__home img.participant__image', (img: any) => img.src).catch(() => '');
+                awayHd = await matchPage.$eval('.duelParticipant__away img.participant__image', (img: any) => img.src).catch(() => '');
+
+                // Only update if we found a valid new URL and it differs from what we have
+                if (homeHd && homeHd.startsWith('http') && homeHd !== homeStatus.logo_url) {
                     await supabaseAdmin.from('teams').update({ logo_url: homeHd }).eq('id', homeStatus.id);
-                    console.log(`✅ Updated Home Logo: ${match.home}`);
+                    console.log(`🏠 HD Home Logo Updated: ${match.home}`);
                 }
-                if (awayHd && (awayHd !== awayStatus.logo_url)) {
+                if (awayHd && awayHd.startsWith('http') && awayHd !== awayStatus.logo_url) {
                     await supabaseAdmin.from('teams').update({ logo_url: awayHd }).eq('id', awayStatus.id);
-                    console.log(`✅ Updated Away Logo: ${match.away}`);
+                    console.log(`🚌 HD Away Logo Updated: ${match.away}`);
                 }
-            } catch (err) { }
+            } catch (err: any) {
+                console.log(`❌ HD logo fetch failed: ${err.message}`);
+            }
             await matchPage.close();
 
             // AI ANALYSIS
