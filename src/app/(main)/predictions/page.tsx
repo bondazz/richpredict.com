@@ -13,6 +13,7 @@ import InnerAdBanner from "@/components/Ads/InnerAdBanner";
 import SidebarAd from "@/components/Ads/SidebarAd";
 import { Flag } from "@/components/ui/Flag";
 import DateNavigator from "@/components/layout/DateNavigator";
+import GameTime from "@/components/predictions/GameTime";
 
 export const metadata: Metadata = {
     title: "Football Predictions & Expert Match Analytics | RICHPREDICT",
@@ -197,14 +198,11 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                                             </div>
 
                                             {/* Date/Time Column */}
-                                            <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5">
-                                                <span className="text-[8px] sm:text-[10px] font-black text-white/90 whitespace-nowrap">
-                                                    {formattedDate}
-                                                </span>
-                                                <span className="text-[8px] sm:text-[10px] font-black text-white/50">
-                                                    {match.match_time || "19:00"}
-                                                </span>
-                                            </div>
+                                            <GameTime
+                                                date={match.match_date}
+                                                time={match.match_time || "19:00"}
+                                                className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5"
+                                            />
 
                                             {/* Teams Column */}
                                             <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">

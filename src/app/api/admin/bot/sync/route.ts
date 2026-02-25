@@ -111,7 +111,8 @@ export async function POST(req: Request) {
         browser = await chromium.launch({ headless: true });
         const context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            viewport: { width: 1440, height: 1200 }
+            viewport: { width: 1440, height: 1200 },
+            timezoneId: 'UTC'
         });
 
         const page = await context.newPage();

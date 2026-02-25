@@ -31,6 +31,7 @@ import GlobalBettingChart from "@/components/predictions/GlobalBettingChart";
 import FeaturedMatches from "@/components/predictions/FeaturedMatches";
 import TitleSetter from "@/components/layout/TitleSetter";
 import { Flag } from "@/components/ui/Flag";
+import GameTime from "@/components/predictions/GameTime";
 import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -206,19 +207,12 @@ export default async function PredictionPage({ params }: { params: Promise<{ slu
 
                         <div className="bg-[#001e28] relative overflow-hidden flex flex-col items-center">
                             {/* Hanging Date Badge */}
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
-                                <div className="bg-[#0b242e] border-x border-b border-white/10 px-3 py-1 rounded-b-lg flex items-center gap-3 shadow-lg">
-                                    <div className="flex items-center gap-1.5">
-                                        <Calendar size={9} className="text-[var(--fs-yellow)]" />
-                                        <span className="text-[9px] font-bold text-white font-mono">{match.match_date?.split('T')[0]}</span>
-                                    </div>
-                                    <div className="w-[1px] h-2 bg-white/10" />
-                                    <div className="flex items-center gap-1.5">
-                                        <Clock size={9} className="text-[var(--fs-yellow)]" />
-                                        <span className="text-[9px] font-bold text-white font-mono">{match.match_time || "21:00"}</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <GameTime
+                                date={match.match_date}
+                                time={match.match_time || "21:00"}
+                                showIcons={true}
+                                className="absolute top-0 left-1/2 -translate-x-1/2 z-20 bg-[#0b242e] border-x border-b border-white/10 px-3 py-1 rounded-b-lg flex-row gap-3 shadow-lg"
+                            />
 
                             {/* Premium Background Pattern */}
                             <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />

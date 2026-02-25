@@ -49,6 +49,7 @@ import TopTicker from "@/components/layout/TopTicker";
 import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches";
 import { Flag } from "@/components/ui/Flag";
 import DateNavigator from "@/components/layout/DateNavigator";
+import GameTime from "@/components/predictions/GameTime";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
     const sp = await searchParams;
@@ -298,14 +299,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                                         return (
                                             <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
                                                 {/* Date/Time Column */}
-                                                <div className="w-16 sm:w-24 flex-shrink-0 flex flex-col items-center justify-center leading-tight border-r border-white/5 ml-2">
-                                                    <span className="text-[8px] sm:text-[10px] font-black text-white/90 whitespace-nowrap">
-                                                        {formattedDate}
-                                                    </span>
-                                                    <span className="text-[8px] sm:text-[10px] font-black text-white/50">
-                                                        {match.match_time || "19:00"}
-                                                    </span>
-                                                </div>
+                                                <GameTime
+                                                    date={match.match_date}
+                                                    time={match.match_time || "19:00"}
+                                                    className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5 ml-2"
+                                                />
 
                                                 {/* Teams Column */}
                                                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
