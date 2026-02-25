@@ -1,16 +1,20 @@
-export const revalidate = 0;
-import { Metadata } from "next";
+import React from 'react';
+import { Metadata } from 'next';
 import Link from "next/link";
 import { Zap, Trophy, Loader2, Star, ArrowRight, ChevronDown } from "lucide-react";
 import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
-import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, Prediction, getTeams } from "@/lib/supabase";
+import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, getPremiumPredictionsCount, Prediction, getTeams, getBlogPosts, BlogPost, getTeamsByNames } from "@/lib/supabase";
 
 import { AIPredictTrust } from "@/components/AIPredictTrust";
 import { Testimonials } from "@/components/Testimonials";
+import { RichPredictNews } from "@/components/news/RichPredictNews";
+import { SiteStatistics } from "@/components/SiteStatistics";
 
 import SidebarCountries from "@/components/SidebarCountries";
 import InnerAdBanner from "@/components/Ads/InnerAdBanner";
 import SidebarAd from "@/components/Ads/SidebarAd";
+import TopTicker from "@/components/layout/TopTicker";
+import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches";
 import { Flag } from "@/components/ui/Flag";
 import DateNavigator from "@/components/layout/DateNavigator";
 import GameTime from "@/components/predictions/GameTime";
@@ -23,26 +27,39 @@ export const metadata: Metadata = {
     },
 };
 
+export const revalidate = 0;
+
 export default async function PredictionsPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
     const sp = await searchParams;
     const selectedDate = sp.date || new Date().toISOString().split('T')[0];
 
     let predictions: Prediction[] = [];
+    let regions: any[] = [];
     let pinnedLeagues: any[] = [];
     let allCountries: any[] = [];
     let allTeams: any[] = [];
+    let blogPosts: BlogPost[] = [];
+    let premiumCount = 0;
 
     try {
-        const [preds, pinned, countries, teams] = await Promise.all([
-            getPredictions(100, undefined, selectedDate), // More for predictions page
+        const [preds, regs, pinned, countries, pCount, blogs] = await Promise.all([
+            getPredictions(300, 'Football', selectedDate),
+            getRegions(),
             getPinnedLeagues(),
             getCountriesByRegion(),
-            getTeams()
+            getPremiumPredictionsCount('Football'),
+            getBlogPosts(3)
         ]);
         predictions = preds || [];
+        regions = regs || [];
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
-        allTeams = teams || [];
+        premiumCount = pCount || 0;
+        blogPosts = blogs || [];
+
+        // Fetch only relevant team logos
+        const relevantTeamNames = Array.from(new Set(predictions.flatMap(p => [p.home_team, p.away_team])));
+        allTeams = await getTeamsByNames(relevantTeamNames);
     } catch (e: any) {
         console.error("Supabase connection error:", e);
     }
@@ -53,7 +70,6 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
         if (team.name && team.logo_url) {
             const cleanName = team.name.toLowerCase().trim();
             dbLogoMap[cleanName] = team.logo_url;
-            // Handle common name variations
             if (cleanName === 'manchester united') dbLogoMap['manchester utd'] = team.logo_url;
             if (cleanName === 'manchester utd') dbLogoMap['manchester united'] = team.logo_url;
         }
@@ -61,19 +77,21 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
 
     const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
-    // Group predictions by league
-    const groupedLeagues = predictions.reduce((acc: any, prediction: Prediction) => {
-        const leagueName = prediction.league || "Other Competitions";
+    // Group predictions by league + country
+    const groupedLeagues = predictions.reduce((acc: any, p: Prediction) => {
+        const countryId = p.leagues?.country_id || 'world';
+        const leagueId = p.league_id || p.league || 'other';
+        const groupKey = `${countryId}-${leagueId}`;
 
-        if (!acc[leagueName]) {
-            acc[leagueName] = {
-                id: leagueName.toLowerCase().replace(/\s+/g, '-'),
-                name: leagueName,
-                category: "FOOTBALL",
+        if (!acc[groupKey]) {
+            acc[groupKey] = {
+                id: groupKey,
+                name: p.league || "Other Competitions",
+                category: p.category || "FOOTBALL",
                 matches: []
             };
         }
-        acc[leagueName].matches.push(prediction);
+        acc[groupKey].matches.push(p);
         return acc;
     }, {});
 
@@ -92,22 +110,34 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
 
     return (
         <div className="flex flex-col min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
-            {/* Live Score Bar (Dynamic) */}
-            <div className="bg-[#001e28] border-b border-white/5 py-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                <div className="max-w-[1240px] mx-auto w-full px-4 flex gap-6 text-[11px] font-black uppercase tracking-wider">
-                    <div className="flex gap-4 items-center">
-                        <span className="text-[var(--fs-yellow)] flex items-center gap-1">
-                            <span className="size-1 bg-[var(--fs-yellow)] rounded-full animate-pulse" />
-                            NODES_ACTIVE:
-                        </span>
-                        <div className="flex gap-4 opacity-70">
-                            {predictions.length > 0 ? predictions.slice(0, 4).map((p, i) => (
-                                <span key={i} className="hover:text-white cursor-pointer">{p.home_team} v {p.away_team}</span>
-                            )) : <span>SYNCHRONIZING_GLOBAL_NODES...</span>}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Structured Data for SEO */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify([
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "WebPage",
+                            "name": "Football Predictions & Expert Match Analytics | RICHPREDICT",
+                            "description": "Get the most accurate football predictions, win probabilities, and deep match analytics for all major leagues globally.",
+                            "url": "https://richpredict.com/predictions"
+                        },
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "ItemList",
+                            "name": "Latest Football Match Predictions",
+                            "itemListElement": predictions.slice(0, 5).map((p, i) => ({
+                                "@type": "ListItem",
+                                "position": i + 1,
+                                "name": `${p.home_team} vs ${p.away_team} - ${p.league}`,
+                                "url": `https://richpredict.com/predictions/${generateSEOSlug(p.home_team, p.away_team, p.slug)}`
+                            }))
+                        }
+                    ])
+                }}
+            />
+
+            <TopTicker />
 
             <main className="max-w-[1240px] mx-auto w-full px-2 py-4 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-4">
 
@@ -120,13 +150,12 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                             className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
                             title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
                         >
-                            {league.countries?.flag_url && (
-                                <div
-                                    className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 pointer-events-none select-none"
-                                    style={{ backgroundImage: `url(${league.countries.flag_url})` }}
-                                    aria-label={`${league.countries.name} flag`}
-                                />
-                            )}
+                            <Flag
+                                code={league.countries?.code}
+                                url={league.countries?.flag_url}
+                                name={league.countries?.name}
+                                className="w-3.5 h-2.5"
+                            />
                             <span className="text-[11px] font-medium truncate transition-colors">
                                 {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
                             </span>
@@ -145,112 +174,99 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                 {/* Main Content */}
                 <div className="space-y-3">
                     <InnerAdBanner />
-
                     <DateNavigator />
+                    <PremiumLockedMatches sport="FOOTBALL" count={premiumCount} />
 
-                    {displayLeagues.length > 0 ? displayLeagues.map((league: any) => (
-                        <div key={league.id} className="sportName soccer overflow-hidden rounded-sm border border-white/5 shadow-2xl">
-                            <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
-                                <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Star size={14} className="text-white/40 hover:text-[var(--fs-yellow)] cursor-pointer transition-colors" />
-                                        <div className="flex items-center gap-2">
-                                            {league.matches[0]?.leagues?.countries?.flag_url && (
-                                                <div
-                                                    className="w-[18px] h-[12px] flex-shrink-0 bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm pointer-events-none select-none"
-                                                    style={{ backgroundImage: `url(${league.matches[0].leagues.countries.flag_url})` }}
-                                                    aria-label={`${league.matches[0].leagues.countries.name} flag`}
-                                                />
-                                            )}
-                                            <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
-                                                {league.matches[0]?.leagues?.countries?.name && (
-                                                    <span className="text-white/60 font-black uppercase text-[10px] mr-1.5">{league.matches[0].leagues.countries.name}:</span>
+                    {displayLeagues.length > 0 ? displayLeagues.map((league: any, index: number) => (
+                        <React.Fragment key={league.id}>
+                            <div className="sportName soccer overflow-hidden rounded-xl border border-white/5 shadow-2xl">
+                                <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
+                                    <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="headerLeague__body flex items-center gap-2">
+                                                {league.matches[0]?.leagues?.countries?.flag_url && (
+                                                    <img
+                                                        className="w-[18px] h-[12px] object-cover rounded-[1px] shadow-sm pointer-events-none select-none"
+                                                        src={league.matches[0].leagues.countries.flag_url}
+                                                        alt={`${league.matches[0].leagues.countries.name} flag`}
+                                                        loading="lazy"
+                                                    />
                                                 )}
-                                                {league.name}
-                                            </span>
+                                                <div className="headerLeague__titleWrapper flex flex-col md:flex-row md:items-center">
+                                                    <div className="headerLeague__meta flex items-center">
+                                                        {league.matches[0]?.leagues?.countries?.name && (
+                                                            <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__category uppercase mr-1.5">{league.matches[0].leagues.countries.name}:&nbsp;</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__title">
+                                                        {league.name}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-[9px] font-black text-[var(--fs-yellow)] drop-shadow-sm uppercase tracking-[0.1em] italic">
-                                            {(league.category || "FOOTBALL").toLowerCase().charAt(0).toUpperCase() + (league.category || "FOOTBALL").toLowerCase().slice(1)} tips
-                                        </span>
-                                        <div className="w-4 h-4 flex items-center justify-center text-white/40">
-                                            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[9px] font-black text-[var(--fs-yellow)] drop-shadow-sm uppercase tracking-[0.1em] italic">
+                                                {(league.category || "FOOTBALL").toLowerCase().charAt(0).toUpperCase() + (league.category || "FOOTBALL").toLowerCase().slice(1)} tips
+                                            </span>
+                                            <div className="w-4 h-4 flex items-center justify-center text-white/40">
+                                                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="event__content bg-[var(--fs-header)] divide-y divide-white/5">
-                                {league.matches.map((match: Prediction) => {
-                                    const dateObj = match.match_date ? new Date(match.match_date) : new Date();
-                                    const day = String(dateObj.getDate()).padStart(2, '0');
-                                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                                    const formattedDate = `${day}.${month}.`;
-
-                                    return (
+                                <div className="event__content bg-[var(--fs-header)] divide-y divide-white/5">
+                                    {league.matches.map((match: Prediction) => (
                                         <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
-                                            {/* Star Column */}
-                                            <div className="w-8 sm:w-10 flex justify-center flex-shrink-0">
-                                                <Star size={12} className="text-white/20 group-hover:text-[var(--fs-yellow)] transition-colors cursor-pointer" />
-                                            </div>
-
-                                            {/* Date/Time Column */}
                                             <GameTime
                                                 date={match.match_date}
                                                 time={match.match_time || "19:00"}
-                                                className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5"
+                                                className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5 ml-2"
                                             />
 
-                                            {/* Teams Column */}
                                             <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
                                                 <div className="flex items-center gap-2 sm:gap-2.5">
-                                                    <div
-                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
-                                                        style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
-                                                        aria-label={`${match.home_team} logo`}
+                                                    <img
+                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                        src={getLogo(match.home_team)}
+                                                        alt={match.home_team}
+                                                        loading="lazy"
                                                     />
                                                     <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 sm:gap-2.5">
-                                                    <div
-                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
-                                                        style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
-                                                        aria-label={`${match.away_team} logo`}
+                                                    <img
+                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                        src={getLogo(match.away_team)}
+                                                        alt={match.away_team}
+                                                        loading="lazy"
                                                     />
                                                     <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
                                                 </div>
                                             </div>
 
-                                            {/* Match Preview Column - Visible on all screens */}
-                                            <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2">
+                                            <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
                                                 <Link
                                                     href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                    className="px-2 sm:px-4 py-1.5 text-[8px] sm:text-[9px] font-black uppercase bg-white/5 border border-white/10 rounded-md text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm group-hover:scale-105"
+                                                    className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
                                                 >
                                                     Match Preview
                                                 </Link>
-
-                                                {/* Tooltip (Desktop Only) */}
-                                                <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] text-white text-[10px] font-bold rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 shadow-xl border border-white/10">
-                                                    Click to see expert prediction!
-                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#1e293b]"></div>
-                                                </div>
                                             </div>
 
-                                            {/* Mobile Link Overlay */}
                                             <Link
                                                 href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                className="absolute inset-0 z-0 sm:hidden"
-                                                aria-label={`View full prediction details for ${match.home_team} vs ${match.away_team}`}
+                                                className="absolute inset-0 z-0"
+                                                aria-label={`View match preview for ${match.home_team} vs ${match.away_team}`}
                                             />
                                         </div>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                            {index === 0 && <RichPredictNews posts={blogPosts} />}
+                        </React.Fragment>
                     )) : (
                         <div className="p-20 text-center bg-[var(--fs-header)] rounded-sm border border-white/5 space-y-4">
                             <Loader2 className="w-8 h-8 animate-spin text-[var(--fs-yellow)] mx-auto" />
@@ -287,7 +303,9 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                             </button>
                         </div>
                     </div>
+                    <SiteStatistics />
 
+                    {/* Signal Probability Sliders */}
                     <div className="space-y-4 px-1">
                         <h3 className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2 italic">
                             <Zap className="w-3 h-3 text-[var(--fs-yellow)] fill-[var(--fs-yellow)]" /> Signal_Probability
@@ -306,27 +324,6 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                     </div>
                 </aside>
             </main>
-
-            <footer className="bg-[var(--fs-header)] border-t border-[var(--fs-border)] py-6 mt-auto">
-                <div className="container mx-auto px-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 opacity-70">
-                            <svg viewBox="0 0 160 100" fill="currentColor">
-                                <g className="text-white">
-                                    <path d="m21.1 55.1c-.5-2.6-.6-5.1-.3-7.6l-20.6-1.9c-.4 4.3-.2 8.6.6 13s2.1 8.6 3.9 12.5l18.7-8.7c-1-2.3-1.8-4.7-2.3-7.3" />
-                                    <path d="m27.6 68.8-15.9 13.3c4.7 5.6 10.6 10.1 17.2 13.2l8.7-18.7c-3.8-1.9-7.3-4.5-10-7.8" />
-                                    <path d="m55.1 78.9c-2.6.5-5.2.6-7.6.3l-1.8 20.6c4.3.4 8.6.2 13-.6 1.4-.3 2.9-.6 4.3-.9l-5.4-20c-.8.2-1.7.4-2.5.6" />
-                                    <path d="m44.9 21.1c3.5-.6 7.1-.6 10.4 0l8.9-19.1c-7.2-2.1-15-2.7-22.9-1.3-19.7 3.5-34.7 18.2-39.6 36.4l20 5.4c2.9-10.7 11.6-19.3 23.2-21.4" />
-                                    <path d="m68.8 72.5 13.3 15.8c3.3-2.8 6.3-6.1 8.8-9.6l-16.9-11.9c-1.5 2.1-3.2 4-5.2 5.7" />
-                                    <path d="m99.8 45.6-20.6 1.8c.2 1.7.2 3.4 0 5.1l20.6 1.8c.3-2.8.3-5.7 0-8.7" />
-                                </g>
-                                <path d="m73.3 0-19.2 41.3 83.1-41.3z" fill="var(--fs-yellow)" />
-                            </svg>
-                        </div>
-                        <span className="text-[14px] font-black tracking-tighter text-white uppercase font-[Klapt] leading-none">RICH<span className="text-[var(--fs-yellow)]">PREDICT</span></span>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 }

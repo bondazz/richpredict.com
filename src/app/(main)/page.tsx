@@ -35,7 +35,7 @@ export const revalidate = 0;
 import Link from "next/link";
 import { Zap, Trophy, Loader2, Star, ArrowRight, ChevronDown } from "lucide-react";
 import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
-import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, getPremiumPredictionsCount, Prediction, getTeams, getBlogPosts, BlogPost } from "@/lib/supabase";
+import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, getPremiumPredictionsCount, Prediction, getTeams, getBlogPosts, BlogPost, getTeamsByNames } from "@/lib/supabase";
 
 import { AIPredictTrust } from "@/components/AIPredictTrust";
 import { Testimonials } from "@/components/Testimonials";
@@ -50,6 +50,7 @@ import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches"
 import { Flag } from "@/components/ui/Flag";
 import DateNavigator from "@/components/layout/DateNavigator";
 import GameTime from "@/components/predictions/GameTime";
+import SidebarPinnedLeagues from "@/components/predictions/SidebarPinnedLeagues";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
     const sp = await searchParams;
@@ -65,13 +66,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
     let debugError: string | null = null;
 
     try {
-        const [preds, regs, pinned, countries, pCount, teams, blogs] = await Promise.all([
+        const [preds, regs, pinned, countries, pCount, blogs] = await Promise.all([
             getPredictions(300, 'Football', selectedDate),
             getRegions(),
             getPinnedLeagues(),
             getCountriesByRegion(),
             getPremiumPredictionsCount('Football'),
-            getTeams(),
             getBlogPosts(3)
         ]);
         predictions = preds || [];
@@ -79,8 +79,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
         premiumCount = pCount || 0;
-        allTeams = teams || [];
         blogPosts = blogs || [];
+
+        // Fetch only relevant team logos
+        const relevantTeamNames = Array.from(new Set(predictions.flatMap(p => [p.home_team, p.away_team])));
+        allTeams = await getTeamsByNames(relevantTeamNames);
     } catch (e: any) {
         console.error("Supabase connection error:", e);
         debugError = e.message;
@@ -221,13 +224,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                             className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
                             title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
                         >
-                            {league.countries?.flag_url && (
-                                <div
-                                    className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 pointer-events-none select-none"
-                                    style={{ backgroundImage: `url(${league.countries.flag_url})` }}
-                                    aria-label={`${league.countries.name} flag`}
-                                />
-                            )}
+                            <Flag
+                                code={league.countries?.code}
+                                url={league.countries?.flag_url}
+                                name={league.countries?.name}
+                                className="w-3.5 h-2.5"
+                            />
                             <span className="text-[11px] font-medium truncate transition-colors">
                                 {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
                             </span>
@@ -259,20 +261,25 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                                 <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
                                     <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-2">
+                                            <div className="headerLeague__body flex items-center gap-2">
                                                 {league.matches[0]?.leagues?.countries?.flag_url && (
-                                                    <div
-                                                        className="w-[18px] h-[12px] flex-shrink-0 bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm pointer-events-none select-none"
-                                                        style={{ backgroundImage: `url(${league.matches[0].leagues.countries.flag_url})` }}
-                                                        aria-label={`${league.matches[0].leagues.countries.name} flag`}
+                                                    <img
+                                                        className="w-[18px] h-[12px] object-cover rounded-[1px] shadow-sm pointer-events-none select-none"
+                                                        src={league.matches[0].leagues.countries.flag_url}
+                                                        alt={`${league.matches[0].leagues.countries.name} flag`}
+                                                        loading="lazy"
                                                     />
                                                 )}
-                                                <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
-                                                    {league.matches[0]?.leagues?.countries?.name && (
-                                                        <span className="text-white/60 font-black uppercase text-[10px] mr-1.5">{league.matches[0].leagues.countries.name}:</span>
-                                                    )}
-                                                    {league.name}
-                                                </span>
+                                                <div className="headerLeague__titleWrapper flex flex-col md:flex-row md:items-center">
+                                                    <div className="headerLeague__meta flex items-center">
+                                                        {league.matches[0]?.leagues?.countries?.name && (
+                                                            <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__category uppercase mr-1.5">{league.matches[0].leagues.countries.name}:&nbsp;</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__title">
+                                                        {league.name}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
@@ -308,18 +315,20 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                                                 {/* Teams Column */}
                                                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
                                                     <div className="flex items-center gap-2 sm:gap-2.5">
-                                                        <div
-                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
-                                                            style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
-                                                            aria-label={`${match.home_team} logo`}
+                                                        <img
+                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                            src={getLogo(match.home_team)}
+                                                            alt={match.home_team}
+                                                            loading="lazy"
                                                         />
                                                         <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 sm:gap-2.5">
-                                                        <div
-                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
-                                                            style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
-                                                            aria-label={`${match.away_team} logo`}
+                                                        <img
+                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                            src={getLogo(match.away_team)}
+                                                            alt={match.away_team}
+                                                            loading="lazy"
                                                         />
                                                         <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
                                                     </div>

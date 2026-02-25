@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -34,8 +35,9 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                             if (shouldHide) return null;
 
                             return (
-                                <div
+                                <Link
                                     key={country.id}
+                                    href={`/predictions/football/${country.name.toLowerCase().replace(/\s+/g, '-')}`}
                                     className="flex items-center gap-2 px-2 py-1 text-[11px] text-white hover:text-white cursor-pointer transition-colors hover:bg-white/5 rounded-sm group"
                                 >
                                     {country.flag_url && (
@@ -46,7 +48,7 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                                         />
                                     )}
                                     <span className="truncate">{country.name}</span>
-                                </div>
+                                </Link>
                             );
                         })}
                     </div>

@@ -392,15 +392,83 @@ export const getCountryById = async (id: string) => {
     return data
 }
 
+export const getCountryByName = async (name: string) => {
+    // Standardize: decode and replace hyphens if needed
+    const decodedName = decodeURIComponent(name).replace(/-/g, ' ');
+
+    // Try space-replaced name first
+    const { data: data1 } = await supabase
+        .from('countries')
+        .select('*, regions(name)')
+        .ilike('name', decodedName)
+        .single();
+
+    if (data1) return data1;
+
+    // Fallback search
+    const { data: data2 } = await supabase
+        .from('countries')
+        .select('*, regions(name)')
+        .ilike('name', name)
+        .single();
+
+    return data2 || null;
+}
+
+export const getPredictionsByCountry = async (countryId: string, limit = 50, date?: string) => {
+    let query = supabase
+        .from('predictions')
+        .select(`
+            *,
+            leagues!inner (
+                name,
+                logo_url,
+                country_id,
+                countries (
+                    id,
+                    name,
+                    flag_url,
+                    code
+                )
+            )
+        `)
+        .eq('leagues.country_id', countryId)
+        .order('match_date', { ascending: false })
+        .limit(limit);
+
+    if (date) {
+        query = query.eq('match_date', date);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('Error fetching country predictions:', error);
+        return [];
+    }
+    return data as Prediction[];
+}
+
 export const getPinnedLeagues = async () => {
     const { data, error } = await supabase
         .from('leagues')
-        .select('*, countries(name, flag_url)')
+        .select('*, countries(name, flag_url, code)')
         .eq('is_pinned', true)
         .order('order_index', { ascending: true })
 
     if (error) return [] as League[]
     return data as League[]
+}
+
+export const getLeaguesByCountry = async (countryId: string) => {
+    const { data, error } = await supabase
+        .from('leagues')
+        .select('*')
+        .eq('country_id', countryId)
+        .order('name', { ascending: true });
+
+    if (error) return [];
+    return data;
 }
 
 export const getLeagues = async () => {
@@ -455,6 +523,26 @@ export const getTeams = async () => {
         if (page > 10) hasMore = false;
     }
 
+    return allTeams;
+}
+
+export const getTeamsByNames = async (names: string[]) => {
+    if (!names || names.length === 0) return [];
+
+    // Split into chunks of 100 to avoid long queries
+    const chunks = [];
+    for (let i = 0; i < names.length; i += 100) {
+        chunks.push(names.slice(i, i + 100));
+    }
+
+    const results = await Promise.all(chunks.map(chunk =>
+        supabase
+            .from('teams')
+            .select('name, logo_url')
+            .in('name', chunk)
+    ));
+
+    const allTeams = results.flatMap(r => r.data || []);
     return allTeams;
 }
 

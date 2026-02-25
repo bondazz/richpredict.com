@@ -16,30 +16,34 @@ interface GameTimeProps {
  * Robust version to handle complex date strings from Supabase.
  */
 export default function GameTime({ date, time, className, showIcons = false }: GameTimeProps) {
-    const [displayTime, setDisplayTime] = useState(time);
+    const [displayTime, setDisplayTime] = useState("");
     const [displayDate, setDisplayDate] = useState("");
 
     useEffect(() => {
+        if (!date || !time) return;
+
         try {
-            // 1. Extract only the YYYY-MM-DD part from the date string
-            // Even if it is "2026-02-25T00:00:00+00:00"
-            const datePart = date.split('T')[0];
+            // 1. Extract YYYY-MM-DD
+            const datePart = date.includes('T') ? date.split('T')[0] : date;
 
-            // 2. Extract hours and minutes from the time string
-            const timePart = time || "19:00";
-            const [hours, minutes] = timePart.includes(':') ? timePart.split(':') : ["19", "00"];
+            // 2. Extract HH:mm
+            const timePart = time || "00:00";
+            const [hours, minutes] = timePart.includes(':') ? timePart.split(':') : ["00", "00"];
 
-            // 3. Construct a proper UTC ISO string
-            const isoString = `${datePart}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00Z`;
-            const utcDate = new Date(isoString);
+            // 3. Create UTC Date object
+            // Using Date.UTC to avoid environment-specific parsing issues
+            const year = parseInt(datePart.split('-')[0]);
+            const month = parseInt(datePart.split('-')[1]) - 1;
+            const day = parseInt(datePart.split('-')[2]);
+            const h = parseInt(hours);
+            const m = parseInt(minutes);
 
-            if (isNaN(utcDate.getTime())) {
-                console.warn("Invalid date created:", isoString);
-                return;
-            }
+            const utcDate = new Date(Date.UTC(year, month, day, h, m));
 
-            // 4. Format to user's local timezone
-            const localTime = utcDate.toLocaleTimeString([], {
+            if (isNaN(utcDate.getTime())) return;
+
+            // 4. Local display formatting
+            const localTime = utcDate.toLocaleTimeString('en-GB', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
@@ -47,12 +51,13 @@ export default function GameTime({ date, time, className, showIcons = false }: G
 
             const localDay = String(utcDate.getDate()).padStart(2, '0');
             const localMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
-            const localDateStr = `${localDay}.${localMonth}.`;
+            const localYear = utcDate.getFullYear();
+            const localDateStr = `${localDay}.${localMonth}.${localYear}`;
 
             setDisplayTime(localTime);
             setDisplayDate(localDateStr);
         } catch (e) {
-            console.error("Error formatting local time:", e);
+            console.error("GameTime conversion error:", e);
         }
     }, [date, time]);
 
@@ -60,10 +65,10 @@ export default function GameTime({ date, time, className, showIcons = false }: G
     const getDefaultDate = () => {
         try {
             const datePart = date.split('T')[0];
-            const d = new Date(datePart);
-            if (isNaN(d.getTime())) return "??.??.";
-            return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`;
-        } catch (e) { return "??.??."; }
+            const parts = datePart.split('-');
+            if (parts.length < 3) return "??.??.????";
+            return `${parts[2]}.${parts[1]}.${parts[0]}`;
+        } catch (e) { return "??.??.????"; }
     };
 
     const isFlexRow = className?.includes('flex-row');
@@ -80,7 +85,7 @@ export default function GameTime({ date, time, className, showIcons = false }: G
             <div className="flex items-center gap-1.5 min-w-0">
                 {showIcons && <Clock size={9} className="text-[var(--fs-yellow)] flex-shrink-0" />}
                 <span className="text-[8px] sm:text-[10px] font-black text-white/50">
-                    {displayTime}
+                    {displayTime || time}
                 </span>
             </div>
         </div>

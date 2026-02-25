@@ -34,9 +34,9 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
                                         aria-label={`${matches[0].leagues.countries.name} flag`}
                                     />
                                 )}
-                                <span className="text-[11px] font-bold text-white tracking-tight leading-none drop-shadow-md">
+                                <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md">
                                     {matches[0]?.leagues?.countries?.name && (
-                                        <span className="text-white/60 font-black uppercase text-[10px] mr-1.5">{matches[0].leagues.countries.name}:</span>
+                                        <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md uppercase mr-1.5">{matches[0].leagues.countries.name}:</span>
                                     )}
                                     Featured League Cluster
                                 </span>

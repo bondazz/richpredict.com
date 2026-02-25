@@ -31,21 +31,15 @@ export function extractMatchSuffix(slug: string) {
 export function getTeamLogo(name: string, dbLogoMap: Record<string, string>) {
     const normalized = name.toLowerCase().trim();
 
-    // 1. Exact match
+    // 1. Exact match - O(1)
     if (dbLogoMap[normalized]) return dbLogoMap[normalized];
 
-    // 2. Fuzzy match: check if the name is a substring or vice versa
-    const dbNames = Object.keys(dbLogoMap);
+    // 2. Optimized fuzzy match: Only do this if the map is relatively small 
+    // or use a more targeted approach. For now, let's keep it simple to avoid hangs.
+    const cleanNormalized = normalized.replace(/\s(fc|utd|united|city|rovers)$/i, '');
+    if (dbLogoMap[cleanNormalized]) return dbLogoMap[cleanNormalized];
 
-    // Try to find a name that is contained within the search name or contains it
-    const fuzzyMatch = dbNames.find(dbName =>
-        normalized.includes(dbName) || dbName.includes(normalized) ||
-        normalized.replace(/\s(fc|utd|united|city|rovers)$/i, '').includes(dbName.replace(/\s(fc|utd|united|city|rovers)$/i, ''))
-    );
-
-    if (fuzzyMatch) return dbLogoMap[fuzzyMatch];
-
-    // 3. Hardcoded defaults for common big teams as fallback
+    // 3. Check common big teams as fallback
     const defaults: Record<string, string> = {
         'real madrid': 'https://static.flashscore.com/res/image/data/W8mj7MDD.png',
         'barcelona': 'https://static.flashscore.com/res/image/data/nVtr6hT-GEKimEim.png',
@@ -59,9 +53,10 @@ export function getTeamLogo(name: string, dbLogoMap: Record<string, string>) {
         'dortmund': 'https://static.flashscore.com/res/image/data/nP1i5US1.png'
     };
 
-    const cleanNormalized = normalized.replace(/\s(fc|utd|united|city|rovers)$/i, '');
+    if (defaults[cleanNormalized]) return defaults[cleanNormalized];
+
     for (const [key, val] of Object.entries(defaults)) {
-        if (key.includes(cleanNormalized) || cleanNormalized.includes(key.replace(/\s(fc|utd|united|city|rovers)$/i, ''))) {
+        if (cleanNormalized.includes(key) || key.includes(cleanNormalized)) {
             return val;
         }
     }

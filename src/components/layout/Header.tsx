@@ -1,14 +1,14 @@
 "use client";
 
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Trophy, Search, Menu, Newspaper, ChevronDown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileMenu from "@/components/layout/MobileMenu";
+import { motion } from "framer-motion"; // Added framer-motion import
 
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 
 import { useTitle } from "@/context/TitleContext";
 
@@ -19,8 +19,25 @@ interface HeaderProps {
 }
 
 export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }: HeaderProps) {
-    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [adView, setAdView] = useState<'main' | 'feedback'>('main');
+    const [selectedAd, setSelectedAd] = useState({
+        src: "https://tpc.googlesyndication.com/simgad/12096407865385422292",
+        w: 728
+    });
+    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
+
+    useEffect(() => {
+        const ads = [
+            { src: "https://tpc.googlesyndication.com/simgad/12096407865385422292", w: 728 },
+            { src: "https://tpc.googlesyndication.com/simgad/12669755248557285122", w: 970 },
+            { src: "https://tpc.googlesyndication.com/simgad/14562515983077514365", w: 970 }
+        ];
+        const randomAd = ads[Math.floor(Math.random() * ads.length)];
+        setSelectedAd(randomAd);
+        setMounted(true);
+    }, []);
 
     const { title } = useTitle();
 
@@ -64,22 +81,79 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                 </div>
             </div>
 
-            {/* 2. AD BANNER AREA */}
+            {/* 2. AD BANNER AREA - Simulated Google Ad */}
             <div className="bg-[var(--fs-bg)] py-3 px-2 hidden md:flex justify-center border-b border-white/5">
-                <div className="max-w-[1240px] mx-auto w-full flex justify-center overflow-hidden">
-                    <a
-                        href="https://z.cdn.ftd.agency/go?z=1862533368"
-                        target="_blank"
-                        rel="nofollow"
-                        className="block m-auto outline-none text-center leading-[0] max-w-none shadow-2xl hover:opacity-90 transition-opacity"
+                <div className="max-w-[1240px] mx-auto w-full flex justify-center h-[90px]">
+                    <div
+                        style={{ width: mounted ? `${selectedAd.w}px` : '728px' }}
+                        className={cn(
+                            "h-[90px] bg-[#00141E] border border-white/5 relative shadow-md overflow-hidden font-sans cursor-pointer group/ad transition-[width] duration-300",
+                            !mounted && "opacity-0"
+                        )}
                     >
-                        <img
-                            src="https://f7.cdn.ftd.agency/uploads/media/3/0/174903/v1/casino_smartphone_10000_970x90.gif"
-                            width="970"
-                            alt="Advertisement"
-                            className="static w-full max-w-[970px] h-auto rounded-sm"
-                        />
-                    </a>
+                        {mounted && (
+                            <>
+                                {/* 2.1 MAIN AD VIEW */}
+                                <div className={cn("w-full h-full", adView === 'feedback' ? "hidden" : "block")}>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setAdView('feedback'); }}
+                                        className="absolute top-0 left-0 w-[22px] h-[22px] bg-white/80 flex items-center justify-center z-[100] rounded-br-[4px] border-none"
+                                    >
+                                        <svg className="w-3.5 h-3.5 fill-[#333]" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+                                    </button>
+
+                                    <div
+                                        onClick={(e) => { e.stopPropagation(); window.open('https://support.google.com/My-Ad-Center-Help/answer/12155656?url=https://richpredict.com', '_blank'); }}
+                                        className="absolute top-0 right-0 flex items-center bg-white/90 px-1 py-0.5 rounded-bl-[4px] z-[50] group/info"
+                                    >
+                                        <span className="text-[11px] text-[#202124] max-w-0 overflow-hidden whitespace-nowrap transition-all duration-400 group-hover/info:max-w-[100px] group-hover/info:mr-1">Ads by Google</span>
+                                        <svg className="w-3.5 h-3.5 fill-[#4285f4]" viewBox="0 0 15 15">
+                                            <path d="M7.5 1.5a6 6 0 100 12 6 6 0 100-12m0 1a5 5 0 110 10 5 5 0 110-10zM6.625 11h1.75V6.5h-1.75zM7.5 3.75a1 1 0 100 2 1 1 0 100-2z"></path>
+                                        </svg>
+                                    </div>
+
+                                    <div
+                                        onClick={() => {
+                                            try {
+                                                const b64_link = "aHR0cHM6Ly92YXZhZGEuY29tP3V0bV9zb3VyY2U9cmljaHByZWRpY3QuY29tJnV0bV9tZWRpdW09YmFubmVyJnV0bV9jYW1wYWlnbj1nb29nbGVhZHNfc2ltdWxhdG9y";
+                                                window.open(window.atob(b64_link), '_blank');
+                                            } catch (e) {
+                                                window.open('https://vavada.com', '_blank');
+                                            }
+                                        }}
+                                        className="w-full h-full"
+                                    >
+                                        <img
+                                            src={selectedAd.src}
+                                            className="w-full h-full object-cover border-none"
+                                            alt="Ad"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={cn("w-full h-full bg-[#f8f9fa] flex-col justify-center items-center text-center", adView === 'feedback' ? "flex" : "hidden")}>
+                                    <button
+                                        onClick={() => setAdView('main')}
+                                        className="absolute top-0 left-0 w-[22px] h-[22px] bg-white/80 flex items-center justify-center z-[100] rounded-br-[4px]"
+                                    >
+                                        <svg className="w-4 h-4 fill-[#333]" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+                                    </button>
+                                    <div className="text-[18px] text-[#5f6368] mb-2.5">Ads by <b className="font-bold">Google</b></div>
+                                    <div className="flex gap-2.5">
+                                        <button className="bg-[#4285f4] text-white border-none px-4 py-1.5 rounded-[4px] text-[13px] font-medium">Send feedback</button>
+                                        <button
+                                            className="bg-white text-[#5f6368] border border-[#dadce0] px-4 py-1.5 rounded-[4px] text-[13px] flex items-center gap-1.5 font-medium"
+                                            onClick={(e) => { e.stopPropagation(); window.open('https://support.google.com/My-Ad-Center-Help/answer/12155656', '_blank'); }}
+                                        >
+                                            Why this ad?
+                                            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -180,20 +254,13 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
 
             {/* 4. SPORTS BAR (Flashscore Style) */}
             <div className="bg-[#00141e]/50 backdrop-blur-md border-t border-white/5">
-                <div className="max-w-[1240px] mx-auto w-full px-2 flex items-center h-10 overflow-x-auto scrollbar-hide">
-                    <div className="flex items-center gap-1 min-w-max">
+                <div className="max-w-[1240px] mx-auto w-full px-2 flex items-center justify-center h-10 overflow-x-auto scrollbar-hide">
+                    <div className="flex items-center gap-1">
                         {[
                             {
-                                name: "Favorites", slug: "favorites", icon: (props: any) => (
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                    </svg>
-                                ), count: 0
-                            },
-                            {
                                 name: "Football", slug: "football", path: "/", icon: (props: any) => (
-                                    <svg viewBox="0 0 19.9 19.9" fill="currentColor" {...props}>
-                                        <path d="m17 2.9c-3.9-3.9-10.2-3.9-14.1 0s-3.9 10.2 0 14.1c2.5 2.5 6.2 3.5 9.6 2.6s6.1-3.6 7-7c1-3.5 0-7.2-2.5-9.7zm.4 2.8c.6 1.1 1 2.2 1.1 3.4l-1.8-1zm-1.4-1.8c.1.1.3.3.4.4l-1.1 3.6-1.3.4-3.3-2.4v-1.4l3.2-2.2c.7.4 1.5.9 2.1 1.6zm-6-2.5c.8 0 1.6.1 2.3.3l-2.3 1.6-2.3-1.6c.7-.2 1.5-.3 2.3-.3zm-6.1 2.5c.6-.7 1.4-1.2 2.2-1.6l3.2 2.2v1.4l-3.3 2.4-1.4-.4-1.1-3.6c.1-.1.3-.3.4-.4zm-1.4 1.8.7 2.4-1.8 1.c.1-1.2.5-2.4 1.1-3.4zm1.4 10.3c-.1-.1-.1-.2-.2-.2h2l.7 1.9c-1-.4-1.8-1-2.5-1.7zm2-1.6h-3.3c-.7-1.1-1.1-2.4-1.2-3.7l2.8-1.5 1.4.4 1.3 3.9zm6 3.9c-1.3.3-2.7.3-4 0l-1-3 1.1-1.1h3.8l1.1 1.1zm0-5.4h-3.9l-1.1-3.7 3.1-2.2 3.1 2.3zm4.1 3.1c-.7.7-1.5 1.3-2.4 1.7l.7-1.9h2c-.1.1-.2.2-.3.2zm-2-1.6-.9-.9 1.3-3.9 1.4-.4 2.8 1.5c-.1 1.3-.5 2.6-1.2 3.7z" />
+                                    <svg viewBox="0 0 20 20" fill="currentColor" {...props}>
+                                        <path fillRule="evenodd" d="M17 2.93a9.96 9.96 0 1 0-14.08 14.1A9.96 9.96 0 0 0 17 2.92Zm.41 2.77a8.5 8.5 0 0 1 1.1 3.43L16.66 8.1l.75-2.4Zm-1.37-1.8.37.4-1.11 3.57-1.33.4-3.32-2.41V4.5l3.16-2.2a8.6 8.6 0 0 1 2.22 1.6ZM9.96 1.4c.78-.01 1.55.1 2.3.3l-2.3 1.6-2.3-1.6c.75-.2 1.52-.31 2.3-.3ZM3.9 3.9a8.6 8.6 0 0 1 2.22-1.6l3.16 2.2v1.36l-3.32 2.4-1.32-.4L3.52 4.3l.37-.4ZM2.52 5.7l.75 2.4-1.85 1.03a8.5 8.5 0 0 1 1.1-3.43Zm1.37 10.35-.22-.23H5.7l.65 1.95a8.6 8.6 0 0 1-2.45-1.72Zm2.01-1.6H2.63A8.5 8.5 0 0 1 1.4 10.7l2.75-1.55 1.41.43 1.28 3.91-.95.95Zm6.05 3.89c-1.3.3-2.66.3-3.97 0l-1.01-3.02 1.1-1.1h3.79l1.1 1.1-1.01 3.02Zm-.07-5.44H8.05L6.86 9.25 9.96 7l3.1 2.25-1.18 3.65Zm4.15 3.15a8.6 8.6 0 0 1-2.45 1.72l.66-1.94h2.01l-.22.22Zm-2-1.6-.95-.95 1.27-3.91 1.41-.43 2.76 1.55a8.5 8.5 0 0 1-1.22 3.74h-3.27Z" />
                                     </svg>
                                 )
                             },
@@ -269,11 +336,6 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                     )}>
                                         {sport.name}
                                     </span>
-                                    {sport.count !== undefined && (
-                                        <span className="text-[7px] font-bold bg-white/10 px-1 rounded-sm text-[var(--fs-text-dim)]">
-                                            {sport.count}
-                                        </span>
-                                    )}
                                 </Link>
                             );
                         })}
