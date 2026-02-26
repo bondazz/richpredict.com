@@ -36,8 +36,8 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
         // Fetch matches. We use a simpler query to ensures results.
         const { data: matches, error } = await supabaseAdmin
             .from('predictions')
-            .select('home_team, away_team, slug, updated_at, category')
-            .order('updated_at', { ascending: false })
+            .select('home_team, away_team, slug, created_at, category')
+            .order('created_at', { ascending: false })
             .limit(10000);
 
         if (error) {
@@ -56,7 +56,7 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
         const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     ${(filteredMatches || []).map(match => {
-            const date = formatDate(match.updated_at || new Date().toISOString());
+            const date = formatDate(match.created_at || new Date().toISOString());
             const finalSlug = generateSEOSlug(match.home_team, match.away_team, match.slug || '');
             return `
     <url>
