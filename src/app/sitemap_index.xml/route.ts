@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
+
 // Helper function to format XML dates (ISO 8601 without ms)
 const formatDate = (date: Date) => {
     return date.toISOString().split('.')[0] + '+00:00';

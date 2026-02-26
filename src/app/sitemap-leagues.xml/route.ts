@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
+
 function escapeXml(unsafe: string) {
     if (!unsafe) return '';
     return unsafe.replace(/[<>&'"]/g, function (c) {

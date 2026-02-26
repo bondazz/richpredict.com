@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
+
 import { generateSEOSlug } from '@/lib/utils';
 
 function escapeXml(unsafe: string) {
@@ -20,10 +23,16 @@ function formatDate(date: string) {
     return new Date(date).toISOString().split('.')[0] + '+00:00';
 }
 
-export async function GET(req: Request, props: { params: Promise<{ sport: string }> }) {
-    const params = await props.params;
+export async function GET(req: Request, context: { params: Promise<{ sport: string }> }) {
+    const params = await context.params;
+    const sport = params?.sport?.toLowerCase();
+
+    if (!sport) {
+        return new NextResponse('Sport parameter is required', { status: 400 });
+    }
+
     const baseUrl = 'https://richpredict.com';
-    const sport = params.sport.toLowerCase();
+
 
     try {
         let query = supabaseAdmin
