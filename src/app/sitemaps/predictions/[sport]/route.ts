@@ -33,24 +33,29 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
     const baseUrl = 'https://richpredict.com';
 
     try {
-        let query = supabaseAdmin
+        // Fetch matches. We use a simpler query to ensures results.
+        const { data: matches, error } = await supabaseAdmin
             .from('predictions')
             .select('home_team, away_team, slug, updated_at, category')
             .order('updated_at', { ascending: false })
-            .limit(10000); // Max allowed for one sitemap
+            .limit(10000);
 
-        // If sport is football, handle empty category too, otherwise exact match
-        if (sport === 'football') {
-            query = query.or('category.ilike.Football,category.is.null');
-        } else {
-            query = query.ilike('category', sport);
+        if (error) {
+            console.error('Sitemap Error:', error);
+            return new NextResponse('Error fetching data', { status: 500 });
         }
 
-        const { data: matches } = await query;
+        const filteredMatches = (matches || []).filter(m => {
+            const cat = m.category?.toLowerCase() || '';
+            if (sport === 'football') {
+                return cat === 'football' || cat === '';
+            }
+            return cat === sport;
+        });
 
         const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${(matches || []).map(match => {
+    ${(filteredMatches || []).map(match => {
             const date = formatDate(match.updated_at || new Date().toISOString());
             const finalSlug = generateSEOSlug(match.home_team, match.away_team, match.slug || '');
             return `

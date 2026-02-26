@@ -34,7 +34,7 @@ export async function GET() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     ${(countries || []).map(country => `
     <url>
-        <loc>${baseUrl}/predictions/football/${escapeXml(country.slug)}</loc>
+        <loc>${baseUrl}/predictions/football/${escapeXml((country.slug || country.name || '').toLowerCase().replace(/\s+/g, '-'))}</loc>
         <lastmod>${formatDate(new Date().toISOString())}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>

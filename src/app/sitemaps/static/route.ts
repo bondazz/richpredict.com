@@ -15,7 +15,9 @@ export async function GET() {
         { url: '/basketball', priority: '0.8', changefreq: 'daily' },
         { url: '/hockey', priority: '0.8', changefreq: 'daily' },
         { url: '/golf', priority: '0.8', changefreq: 'daily' },
-        { url: '/admin/login', priority: '0.1', changefreq: 'yearly' },
+        { url: '/contact', priority: '0.5', changefreq: 'monthly' },
+        { url: '/recommended', priority: '0.6', changefreq: 'weekly' },
+        { url: '/advertise', priority: '0.5', changefreq: 'monthly' },
     ];
 
     const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
