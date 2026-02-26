@@ -12,19 +12,18 @@ export default function AdminLoginPage() {
         setError("");
 
         const formData = new FormData(e.currentTarget);
+        const email = formData.get('email');
         const password = formData.get('password');
 
-        // Simple hardcoded or database-backed login logic
-        // For now, let's assume we have an API route or server action
         const res = await fetch('/api/admin/login', {
             method: 'POST',
-            body: JSON.stringify({ password }),
+            body: JSON.stringify({ email, password }),
         });
 
         if (res.ok) {
             window.location.href = '/admin/dashboard';
         } else {
-            setError("Invalid credentials");
+            setError("Invalid credentials or access denied");
             setIsLoading(false);
         }
     };
@@ -45,15 +44,29 @@ export default function AdminLoginPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Access Module Key</label>
-                        <input
-                            name="password"
-                            type="password"
-                            required
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-700"
-                            placeholder="••••••••••••"
-                        />
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Terminal ID (Email)</label>
+                            <input
+                                name="email"
+                                type="email"
+                                defaultValue="info@richpredict.com"
+                                required
+                                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-700"
+                                placeholder="name@domain.com"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Access Module Key (Password)</label>
+                            <input
+                                name="password"
+                                type="password"
+                                required
+                                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-700"
+                                placeholder="••••••••••••"
+                            />
+                        </div>
                     </div>
 
                     {error && (

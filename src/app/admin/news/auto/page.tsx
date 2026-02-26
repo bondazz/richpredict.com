@@ -22,6 +22,7 @@ type LogType = 'info' | 'success' | 'warning' | 'error';
 export default function AutoNewsPage() {
     const [category, setCategory] = useState<string>("football");
     const [articleCount, setArticleCount] = useState<number>(3);
+    const [targetLink, setTargetLink] = useState<string>("");
     const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<{ msg: string; type: LogType }[]>([]);
     const logEndRef = useRef<HTMLDivElement>(null);
@@ -46,12 +47,13 @@ export default function AutoNewsPage() {
         addLog(`🚀 INITIALIZING_NEWS_BOT_CLUSTER...`, 'info');
         addLog(`Target Category: ${category.toUpperCase()}`, 'info');
         addLog(`Fetch Depth: ${articleCount} articles`, 'info');
+        if (targetLink) addLog(`Custom Target URL: ${targetLink}`, 'info');
 
         try {
             const res = await fetch('/api/admin/news/auto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ category, articleCount })
+                body: JSON.stringify({ category, articleCount, targetLink })
             });
 
             const data = await res.json();
@@ -141,6 +143,17 @@ export default function AutoNewsPage() {
                                     <option value="hockey">Hockey</option>
                                     <option value="golf">Golf</option>
                                 </select>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Target Link (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={targetLink}
+                                    onChange={(e) => setTargetLink(e.target.value)}
+                                    placeholder="https://www.flashscore.com/news/football/"
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-yellow-500 transition-all font-mono text-white"
+                                />
                             </div>
 
                             <div>

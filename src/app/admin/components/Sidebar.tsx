@@ -25,6 +25,7 @@ const menuItems = [
     { name: 'Countries', href: '/admin/countries', icon: Globe },
     { name: 'Teams', href: '/admin/teams', icon: Users },
     { name: 'Team Scraper', href: '/admin/scraper', icon: Zap },
+    { name: 'Index Google', href: '/admin/index-google', icon: Globe },
 ];
 
 export default function Sidebar() {

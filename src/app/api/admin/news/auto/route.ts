@@ -105,97 +105,130 @@ async function rewriteWithDeepSeek(originalTitle: string, originalContent: strin
 export async function POST(req: Request) {
     let browser: Browser | null = null;
     try {
-        const { category, articleCount } = await req.json();
+        const { category, articleCount, targetLink } = await req.json();
         const logs: string[] = [];
-        const targetUrl = `https://www.flashscore.com/news/${category.toLowerCase()}/`;
+
+        let targetUrl = targetLink;
+        if (!targetUrl) {
+            const newsCategory = category.toLowerCase();
+            targetUrl = `https://www.flashscore.com/news/${newsCategory}/`;
+        }
 
         logs.push(`🚀 Starting News_Bot synchronization...`);
         logs.push(`Target URL: ${targetUrl}`);
 
-        browser = await chromium.launch({ headless: true });
+        browser = await chromium.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        });
+
         const context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             viewport: { width: 1440, height: 1200 }
         });
 
         const page = await context.newPage();
-        await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 60000 });
 
-        // Accept cookies
+        // Navigate with a slightly lower timeout and more reliable wait state
         try {
-            const cookieBtn = await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
+            await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            // Add a small manual wait for any dynamic content
+            await page.waitForTimeout(3000);
+        } catch (e: any) {
+            logs.push(`⚠️ Initial navigation warning (Retrying...): ${e.message}`);
+            // Retry once on timeout
+            try {
+                await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
+                await page.waitForTimeout(3000);
+            } catch (e2: any) {
+                logs.push(`❌ Second navigation failed: ${e2.message}`);
+            }
+        }
+
+        // Accept cookies if present
+        try {
+            const cookieBtn = await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 3000 });
             if (cookieBtn) await cookieBtn.click();
         } catch (e) { }
 
-        // Efficiently extract article links in chronological order
+        // Efficiently extract article links and images from .fsNews
         logs.push("Scanning main article feed...");
-        const articleLinks = await page.evaluate((limit) => {
-            // Find all news article preview links
-            const elements = document.querySelectorAll('a[data-testid="wcl-newsArticlePreview"]');
+        const articlesToProcess = await page.evaluate((limit) => {
+            const container = document.querySelector('.fsNews') || document.querySelector('div[class^="fp-section_"]') || document.body;
+            const results = [];
             const uniqueLinks = new Set<string>();
-            const links: string[] = [];
 
+            const elements = container.querySelectorAll('a[href*="/news/"]');
             for (const el of Array.from(elements)) {
                 const href = (el as HTMLAnchorElement).href;
-                if (href && !uniqueLinks.has(href)) {
-                    uniqueLinks.add(href);
-                    links.push(href);
+                // Exclude parent category or pagination links
+                if (href && href.includes('/news/') && !href.match(/\/news\/[a-z\-]+\/?$/) && !href.includes('page-')) {
+                    if (!uniqueLinks.has(href)) {
+                        let imageUrl = '';
+
+                        // Extract specific avif format from listing
+                        const avifSource = el.querySelector('source[type="image/avif"]');
+                        if (avifSource) {
+                            const srcset = avifSource.getAttribute('srcset') || '';
+                            const match = srcset.split(',').map(p => p.trim().split(' ')[0]).find(u => u.includes('r900xfq60'));
+                            if (match) imageUrl = match;
+                        }
+
+                        // Fallback image extraction from listing
+                        if (!imageUrl) {
+                            const img = el.querySelector('img');
+                            if (img) imageUrl = img.src || img.getAttribute('src') || '';
+                        }
+
+                        uniqueLinks.add(href);
+                        results.push({ url: href, image: imageUrl });
+                    }
                 }
-                // Stop once we hit the requested limit
-                if (links.length >= limit) break;
+                if (results.length >= limit) break;
             }
-            return links;
+            return results;
         }, articleCount);
 
-        logs.push(`Found ${articleLinks.length} articles to process.`);
+        if (articlesToProcess.length === 0) {
+            logs.push("⚠️ No articles found in the expected containers (.fsNews or .fp-section_).");
+        }
+
+        logs.push(`Found ${articlesToProcess.length} articles to process.`);
+        await page.close(); // Close the index page to free resources
 
         let successCount = 0;
 
-        for (const link of articleLinks) {
+        // Reuse the same page object for all articles to save memory/CPU
+        const scraperPage = await context.newPage();
+
+        for (const item of articlesToProcess) {
+            const link = item.url;
+            const listingImage = item.image;
             logs.push(`-------------------------------------------`);
             logs.push(`Processing: ${link}`);
 
-            // Go to article page
-            const articlePage = await context.newPage();
             try {
-                await articlePage.goto(link, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                // Navigate to article page - use lower timeout and faster wait
+                await scraperPage.goto(link, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await scraperPage.waitForTimeout(1000);
 
                 // Extract original data
-                const rawData = await articlePage.evaluate(() => {
-                    const title = document.querySelector('h1[data-testid="wcl-news-heading-01"]')?.textContent || '';
+                const rawData = await scraperPage.evaluate(() => {
+                    const title = document.querySelector('h1[data-testid*="news-heading"], h1.wcl-news-heading')?.textContent || '';
                     const perex = document.querySelector('p[data-testid="wcl-news-perex"]')?.textContent || '';
                     const bodyParts = Array.from(document.querySelectorAll('div[data-testid="fp-newsArticle-body"] p'))
                         .map(p => p.textContent)
                         .filter(txt => txt && txt.length > 20);
 
                     const body = bodyParts.join('\n\n');
-
-                    // Direct Target Image Extraction
-                    const imgElement = document.querySelector('figure[data-testid*="newsImage"] img, img[itemprop="image"]');
-                    let imageUrl = imgElement ? (imgElement as HTMLImageElement).src || imgElement.getAttribute('src') || '' : '';
-
-                    // Quality Upgrade: Prefer AVIF r900xfq60 if available in the same container
-                    if (imageUrl) {
-                        const figure = imgElement?.closest('figure');
-                        const avif = figure?.querySelector('source[type="image/avif"]');
-                        if (avif) {
-                            const srcset = avif.getAttribute('srcset') || '';
-                            const match = srcset.split(',').map(p => p.trim().split(' ')[0]).find(u => u.includes('r900xfq60'));
-                            if (match) imageUrl = match;
-                            else {
-                                // If r900 not in avif, check if current imageUrl can be converted or found elsewhere
-                                const r1200 = srcset.split(',').map(p => p.trim().split(' ')[0]).find(u => u.includes('r1200xfq60'));
-                                if (r1200) imageUrl = r1200;
-                            }
-                        }
-                    }
-
-                    return { title, content: `${perex}\n\n${body}`, imageUrl };
+                    return { title, content: `${perex}\n\n${body}`, imageUrl: '' };
                 });
+
+                // Prefer the image we grabbed from the listing
+                rawData.imageUrl = listingImage;
 
                 if (!rawData.title || rawData.content.length < 100) {
                     logs.push(`⚠️ Skipping: Could not extract enough content.`);
-                    await articlePage.close();
                     continue;
                 }
 
@@ -208,7 +241,6 @@ export async function POST(req: Request) {
 
                 if (existing) {
                     logs.push(`⏩ Already Published: Skipping this article.`);
-                    await articlePage.close();
                     continue;
                 }
 
@@ -229,11 +261,11 @@ export async function POST(req: Request) {
                         content: aiResult.content,
                         excerpt: aiResult.excerpt || rawData.title,
                         image_url: rawData.imageUrl,
-                        og_image_url: rawData.imageUrl, // Set OG image for social sharing
+                        og_image_url: rawData.imageUrl,
                         category: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
                         meta_title: aiResult.meta_title,
                         meta_description: aiResult.meta_description,
-                        canonical_url: link, // Store original link to prevent re-scraping
+                        canonical_url: link,
                         language: 'en',
                         published: true,
                         is_indexable: true,
@@ -250,11 +282,10 @@ export async function POST(req: Request) {
 
             } catch (err: any) {
                 logs.push(`❌ Error processing article: ${err.message}`);
-            } finally {
-                await articlePage.close();
             }
         }
 
+        await scraperPage.close();
         await browser.close();
         return NextResponse.json({ success: true, count: successCount, logs });
 
