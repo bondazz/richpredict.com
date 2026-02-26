@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { generateSEOSlug } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
-
-import { generateSEOSlug } from '@/lib/utils';
 
 function escapeXml(unsafe: string) {
     if (!unsafe) return '';
@@ -33,7 +32,6 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
 
     const baseUrl = 'https://richpredict.com';
 
-
     try {
         let query = supabaseAdmin
             .from('predictions')
@@ -43,7 +41,7 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
 
         // If sport is football, handle empty category too, otherwise exact match
         if (sport === 'football') {
-            query = query.or('category.ilike.football,category.is.null');
+            query = query.or('category.ilike.Football,category.is.null');
         } else {
             query = query.ilike('category', sport);
         }

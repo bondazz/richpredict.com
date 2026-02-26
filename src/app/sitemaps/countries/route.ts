@@ -26,18 +26,18 @@ export async function GET() {
     const baseUrl = 'https://richpredict.com';
 
     try {
-        const { data: leagues } = await supabaseAdmin
-            .from('leagues')
+        const { data: countries } = await supabaseAdmin
+            .from('countries')
             .select('*');
 
         const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${(leagues || []).map(league => `
+    ${(countries || []).map(country => `
     <url>
-        <loc>${baseUrl}/football/league/${escapeXml(league.slug)}</loc>
+        <loc>${baseUrl}/predictions/football/${escapeXml(country.slug)}</loc>
         <lastmod>${formatDate(new Date().toISOString())}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
     </url>`).join('')}
 </urlset>`;
 
@@ -49,6 +49,6 @@ export async function GET() {
         });
 
     } catch (e) {
-        return new NextResponse('Error generating leagues sitemap', { status: 500 });
+        return new NextResponse('Error generating countries sitemap', { status: 500 });
     }
 }

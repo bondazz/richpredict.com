@@ -20,7 +20,6 @@ export async function GET() {
         const sitemaps = [
             `${baseUrl}/sitemap-static.xml`,
             `${baseUrl}/sitemap-countries.xml`,
-            `${baseUrl}/sitemap-leagues.xml`,
             `${baseUrl}/sitemap-news.xml`
         ];
 

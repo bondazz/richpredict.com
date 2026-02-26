@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    async rewrites() {
+        return [
+            { source: '/sitemap_index.xml', destination: '/sitemaps/index' },
+            { source: '/sitemap-static.xml', destination: '/sitemaps/static' },
+            { source: '/sitemap-countries.xml', destination: '/sitemaps/countries' },
+            { source: '/sitemap-news.xml', destination: '/sitemaps/news' },
+            { source: '/sitemap-predictions-:sport.xml', destination: '/sitemaps/predictions/:sport' },
+        ];
+    },
     async headers() {
         return [
             {
