@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
             let planName = 'Monthly VIP';
 
             const numAmount = parseFloat(amount);
-            if (numAmount >= 3.0 && numAmount < 10.0) {
+            console.log(`Processing payment of ${numAmount} for user ${userId}`);
+
+            if (numAmount < 10.0) {
                 daysToAdd = 1; planName = 'Daily VIP';
             } else if (numAmount >= 10.0 && numAmount < 30.0) {
                 daysToAdd = 7; planName = 'Weekly VIP';
