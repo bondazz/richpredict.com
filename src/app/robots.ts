@@ -9,6 +9,13 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin/', '/api/'],
         },
-        sitemap: `${baseUrl}/sitemap_index.xml`,
+        sitemap: [
+            `${baseUrl}/sitemap-static.xml`,
+            `${baseUrl}/sitemap-countries.xml`,
+            `${baseUrl}/sitemap-news.xml`,
+            `${baseUrl}/sitemap-predictions-football.xml`,
+            `${baseUrl}/sitemap-predictions-tennis.xml`,
+            `${baseUrl}/sitemap-predictions-basketball.xml`,
+        ],
     }
 }

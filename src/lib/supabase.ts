@@ -147,6 +147,35 @@ export const getPremiumPredictionsCount = async (sport: string) => {
     return count || 0;
 }
 
+export const getPremiumPredictions = async (sport: string = 'Football') => {
+    let query = supabase
+        .from('predictions')
+        .select(`
+            *,
+            leagues (
+                name,
+                logo_url,
+                countries (
+                    name,
+                    flag_url,
+                    code
+                )
+            )
+        `)
+        .eq('is_premium', true)
+        .order('match_date', { ascending: true });
+
+    if (sport.toLowerCase() === 'football') {
+        query = query.or(`category.ilike.Football,category.is.null`);
+    } else {
+        query = query.ilike('category', sport);
+    }
+
+    const { data, error } = await query;
+    if (error) return [];
+    return data as Prediction[];
+}
+
 export const getPredictions = async (limit = 50, category?: string, date?: string) => {
     // Stage 1: Try with category filter if specified
     let query = supabase

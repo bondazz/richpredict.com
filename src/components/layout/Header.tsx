@@ -11,6 +11,7 @@ import { motion } from "framer-motion"; // Added framer-motion import
 import { usePathname } from "next/navigation";
 
 import { useTitle } from "@/context/TitleContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
     pinnedLeagues: any[];
@@ -19,6 +20,7 @@ interface HeaderProps {
 }
 
 export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }: HeaderProps) {
+    const { user, setAuthModalOpen } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [adView, setAdView] = useState<'main' | 'feedback'>('main');
     const [selectedAd, setSelectedAd] = useState({
@@ -231,11 +233,17 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                         <Button variant="ghost" size="icon" className="text-[var(--fs-text-dim)] hover:bg-white/5 h-8 w-8 md:h-10 md:w-10 shrink-0" aria-label="Search">
                             <Search className="w-4 h-4 md:w-5 md:h-5" />
                         </Button>
-                        <Button variant="ghost" className="flex items-center gap-1.5 px-2 md:px-3 hover:bg-white/5 text-[var(--fs-text-dim)] hover:text-white transition-colors h-8 md:h-10 shrink-0">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setAuthModalOpen(true)}
+                            className="flex items-center gap-1.5 px-2 md:px-3 hover:bg-white/5 text-[var(--fs-text-dim)] hover:text-white transition-colors h-8 md:h-10 shrink-0"
+                        >
                             <div className="bg-white/5 p-1 rounded-sm">
                                 <User className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             </div>
-                            <span className="text-[10px] md:text-[11px] font-black uppercase hidden sm:block">Login</span>
+                            <span className="text-[10px] md:text-[11px] font-black uppercase hidden sm:block">
+                                {user ? (user.user_metadata?.full_name?.split(' ')[0] || 'Profile') : 'Login'}
+                            </span>
                         </Button>
                         <div className="lg:hidden shrink-0 ml-1">
                             <Button

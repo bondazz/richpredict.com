@@ -51,6 +51,7 @@ import { Flag } from "@/components/ui/Flag";
 import DateNavigator from "@/components/layout/DateNavigator";
 import GameTime from "@/components/predictions/GameTime";
 import SidebarPinnedLeagues from "@/components/predictions/SidebarPinnedLeagues";
+import UserWidget from "@/components/user/UserWidget";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
     const sp = await searchParams;
@@ -380,29 +381,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 
                 {/* Right Sidebar */}
                 <aside className="hidden xl:flex flex-col space-y-6">
-                    {/* VIP PREMIUM CARD - Standardized across pages */}
-                    <div className="bg-[#001e28] border border-[var(--fs-yellow)]/20 rounded-xl p-6 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--fs-yellow)]/10 rounded-full blur-[60px] group-hover:bg-[var(--fs-yellow)]/20 transition-colors duration-700" />
-                        <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-                            <div className="w-12 h-12 bg-[var(--fs-yellow)] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,221,0,0.2)]">
-                                <Trophy className="w-6 h-6 text-black" strokeWidth={2.5} />
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-white font-[Klapt]">
-                                    VIP <span className="text-[var(--fs-yellow)]">PREMIUM</span>
-                                </h3>
-                                <div className="text-[9px] font-black bg-[var(--fs-yellow)]/10 text-[var(--fs-yellow)] px-2 py-0.5 rounded-sm inline-block uppercase tracking-[0.2em]">
-                                    SUBSCRIBERS
-                                </div>
-                            </div>
-                            <p className="text-[11px] font-bold text-white/50 leading-relaxed">
-                                Get 95%+ accurate AI predictions and exclusive analytics.
-                            </p>
-                            <button className="w-full bg-[var(--fs-yellow)] text-black py-3 rounded-lg text-[11px] font-[Klapt] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(255,221,0,0.15)] flex items-center justify-center gap-2">
-                                UNLOCK ACCESS <ArrowRight size={14} />
-                            </button>
-                        </div>
-                    </div>
+                    <UserWidget />
 
                     {/* Site Statistics Section */}
                     <SiteStatistics />
