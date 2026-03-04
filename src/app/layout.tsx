@@ -52,10 +52,24 @@ export default function RootLayout({
             <head>
                 <link rel="preconnect" href="https://fonts.cdnfonts.com" />
                 <link rel="preconnect" href="https://xacflkmlqvifsxwysofm.supabase.co" />
+                <link rel="preconnect" href="https://www.googletagmanager.com" />
                 <link rel="dns-prefetch" href="https://fonts.cdnfonts.com" />
+                <meta name="yandex-verification" content="e98f2fab0b37b892" />
             </head>
             <body className={cn("min-h-screen bg-[var(--fs-bg)] font-sans antialiased uppercase")}>
                 <AuthProvider>
+                    <Script
+                        src="https://www.googletagmanager.com/gtag/js?id=G-R6W18MF19F"
+                        strategy="afterInteractive"
+                    />
+                    <Script id="google-analytics" strategy="afterInteractive">
+                        {`
+                            window.dataLayer = window.dataLayer || [];
+                            function gtag(){dataLayer.push(arguments);}
+                            gtag('js', new Date());
+                            gtag('config', 'G-R6W18MF19F');
+                        `}
+                    </Script>
                     {children}
                     <AuthModal />
                     <Toaster position="top-right" />
