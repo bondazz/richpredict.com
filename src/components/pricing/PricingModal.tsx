@@ -43,23 +43,31 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
     if (!isOpen) return null;
 
-    const handleSubscribe = (variantId: string) => {
+    const handleSubscribe = async (planName: string, price: string) => {
         if (!user) {
             toast.error('Please login first to subscribe!');
             return;
         }
 
-        // Lemon Squeezy Checkout URL with custom metadata
-        const storeUrl = process.env.NEXT_PUBLIC_LS_STORE_URL || 'https://richpredict.lemonsqueezy.com';
-        const checkoutUrl = `${storeUrl}/checkout/buy/${variantId}?embed=1&checkout[custom][user_id]=${user.id}&checkout[email]=${encodeURIComponent(user.email || '')}`;
+        const tid = toast.loading('Redirecting to checkout...', { id: 'checkout' });
 
-        // Open in a new tab for now, or use LS Overlay if script is loaded
-        window.open(checkoutUrl, '_blank');
+        try {
+            const res = await fetch('/api/pay/passimpay/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planName, price, userId: user.id })
+            });
 
-        // Optimistic refresh after some time
-        setTimeout(() => {
-            refreshSubscription();
-        }, 10000);
+            const data = await res.json();
+
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                toast.error(data.error || 'Payment creation failed!', { id: tid });
+            }
+        } catch (err: any) {
+            toast.error('Network error during checkout.', { id: tid });
+        }
     };
 
     return (
@@ -135,7 +143,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                             </div>
 
                             <button
-                                onClick={() => handleSubscribe(plan.variantId)}
+                                onClick={() => handleSubscribe(plan.name, plan.price)}
                                 className="w-full bg-white/5 hover:bg-[var(--fs-yellow)] text-white hover:text-black py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all group-hover:bg-[var(--fs-yellow)] group-hover:text-black shadow-lg"
                             >
                                 SELECT {plan.name}
