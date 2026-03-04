@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
             platform_id: platformId,
             order_id: orderId,
             amount: amount,
+            currency: 'USD' // Explicitly set currency to trigger fiat/card options if available
         };
 
         // Standard http_build_query in PHP order matters
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
         searchParams.append('platform_id', paramsData.platform_id);
         searchParams.append('order_id', paramsData.order_id);
         searchParams.append('amount', paramsData.amount);
+        searchParams.append('currency', paramsData.currency);
 
         const payloadStr = searchParams.toString();
         const hash = crypto.createHmac('sha256', apiKey).update(payloadStr).digest('hex');
