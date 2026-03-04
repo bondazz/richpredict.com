@@ -52,6 +52,17 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 body: JSON.stringify({ planName, price, userId: user.id })
             });
 
+            if (!res.ok) {
+                const text = await res.text();
+                try {
+                    const errData = JSON.parse(text);
+                    toast.error(errData.error || 'Payment creation failed!', { id: tid });
+                } catch {
+                    toast.error(`Server error: ${res.status}`, { id: tid });
+                }
+                return;
+            }
+
             const data = await res.json();
 
             if (data.url) {

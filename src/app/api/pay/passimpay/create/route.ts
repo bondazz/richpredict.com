@@ -41,23 +41,36 @@ export async function POST(req: NextRequest) {
         // We return the payload so the frontend can submit it or we can do it here
         // Usually, we call the API to get a Redirect URL
 
-        const response = await fetch('https://api.passimpay.io/v1/payment/create', {
+        const response = await fetch('https://api.passimpay.io/v2/payment/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        // Verifying response
+        const text = await response.text();
+        console.log(`PassimPay API Response (Status: ${response.status}):`, text);
 
-        if (result.url) {
-            return NextResponse.json({ url: result.url });
-        } else {
-            console.error('PassimPay Error:', result);
-            return NextResponse.json({ error: result.message || 'Failed to create payment' }, { status: 500 });
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            console.error('PassimPay sent non-JSON:', text);
+            return NextResponse.json({
+                error: `PassimPay API Error: Received status ${response.status}. Please check your Platform ID and API Key in Vercel settings.`
+            }, { status: 500 });
         }
 
+        if (result.status === 'success' || result.url) {
+            return NextResponse.json({ url: result.url || result.data?.url });
+        } else {
+            console.error('PassimPay Error JSON:', result);
+            return NextResponse.json({
+                error: result.message || result.error || 'PassimPay reported an error creating the invoice.'
+            }, { status: 500 });
+        }
     } catch (err: any) {
         console.error('Payment creation error:', err.message);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json({ error: `Internal server error: ${err.message}` }, { status: 500 });
     }
 }
