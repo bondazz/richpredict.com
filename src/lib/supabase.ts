@@ -732,3 +732,14 @@ export const getSynchronizedStats = () => {
         lastIncrement: lastIncrement
     };
 };
+
+export const getSiteSettings = async (id: string) => {
+    const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('id', id)
+        .single()
+    if (error) return null
+    return data.value
+}
+

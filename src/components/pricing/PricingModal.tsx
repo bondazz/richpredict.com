@@ -5,41 +5,35 @@ import { X, Check, Zap, Star, ShieldCheck, Trophy, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { getSiteSettings } from '@/lib/supabase';
 
 interface PricingModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-const plans = [
-    {
-        name: 'Daily Pass',
-        price: '$4.99',
-        period: '24 Hours',
-        variantId: process.env.NEXT_PUBLIC_LS_VARIANT_ID_DAILY || 'dummy_daily',
-        features: ['95%+ AI Predictions', 'VIP Access (24h)', 'Expert Analytics', 'Instant Notifications'],
-        theme: 'silver',
-    },
-    {
-        name: 'Weekly Pass',
-        price: '$14.99',
-        period: '7 Days',
-        variantId: process.env.NEXT_PUBLIC_LS_VARIANT_ID_WEEKLY || 'dummy_weekly',
-        features: ['95%+ AI Predictions', 'VIP Access (7d)', 'Expert Analytics', 'Instant Notifications'],
-        theme: 'gold',
-    },
-    {
-        name: 'Monthly Pass',
-        price: '$39.00',
-        period: '30 Days',
-        variantId: process.env.NEXT_PUBLIC_LS_VARIANT_ID_MONTHLY || 'dummy_monthly',
-        features: ['95%+ AI Predictions', 'VIP Access (30d)', 'Expert Analytics', 'Instant Notifications', 'Priority Support'],
-        theme: 'diamond',
-    }
-];
-
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     const { user, refreshSubscription } = useAuth();
+    const [plans, setPlans] = React.useState<any[]>([]);
+    const [plansLoading, setPlansLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const loadPlans = async () => {
+            const data = await getSiteSettings('pricing_plans');
+            if (data) {
+                setPlans(data);
+            } else {
+                // Fallback
+                setPlans([
+                    { name: 'Daily Pass', price: '$4.99', period: '24 Hours', features: ['95%+ AI Predictions', 'VIP Access (24h)', 'Expert Analytics'] },
+                    { name: 'Weekly Pass', price: '$14.99', period: '7 Days', features: ['95%+ AI Predictions', 'VIP Access (7d)', 'Expert Analytics'] },
+                    { name: 'Monthly Pass', price: '$39.00', period: '30 Days', features: ['VIP Access (30d)', 'Expert Analytics', 'Priority Support'] }
+                ]);
+            }
+            setPlansLoading(false);
+        };
+        if (isOpen) loadPlans();
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -120,7 +114,22 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
                 {/* Right Side: Plans */}
                 <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#001e28]">
-                    {plans.map((plan) => (
+                    {plansLoading ? (
+                        [1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-6 flex flex-col space-y-6 animate-pulse">
+                                <div className="space-y-2">
+                                    <div className="h-3 w-1/2 bg-white/10 rounded" />
+                                    <div className="h-8 w-3/4 bg-white/10 rounded" />
+                                </div>
+                                <div className="space-y-3 flex-1">
+                                    <div className="h-3 w-full bg-white/5 rounded" />
+                                    <div className="h-3 w-5/6 bg-white/5 rounded" />
+                                    <div className="h-3 w-4/6 bg-white/5 rounded" />
+                                </div>
+                                <div className="h-12 w-full bg-white/10 rounded-xl" />
+                            </div>
+                        ))
+                    ) : plans.map((plan) => (
                         <div
                             key={plan.name}
                             className="bg-white/5 border border-white/5 rounded-2xl p-6 flex flex-col space-y-6 hover:border-[var(--fs-yellow)]/30 transition-all hover:bg-white/[0.07] group"
@@ -134,8 +143,8 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                             </div>
 
                             <div className="space-y-3 flex-1">
-                                {plan.features.map((feature, i) => (
-                                    <div key={feature} className="flex items-center gap-2">
+                                {plan.features.map((feature: string, i: number) => (
+                                    <div key={i} className="flex items-center gap-2">
                                         <Check size={14} className="text-[var(--fs-yellow)] shrink-0" />
                                         <span className="text-[10px] font-bold text-white/60 uppercase truncate">{feature}</span>
                                     </div>
