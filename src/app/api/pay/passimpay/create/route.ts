@@ -13,62 +13,64 @@ export async function POST(req: NextRequest) {
         const apiKey = process.env.PASSIMPAY_API_KEY || '10f444-de5e57-6e2576-74e1c0-f0905a';
 
         // Convert price "$39.00" to "39.00"
-        const amount = price.replace('$', '');
-        const orderId = `RP-${Date.now()}-${userId.substring(0, 5)}`;
+        const amount = parseFloat(price.replace('$', '')).toString();
+        // Include full userId in orderId so we can recover it in the webhook
+        const orderId = `${userId}:${Date.now()}`;
 
-        // PassimPay Hash Formula (Standard for creating payment)
-        // Check documentation if this exact formula matches, but typically:
-        // md5(platform_id + amount + currency + order_id + secret)
-        const currency = 'USD';
-        const hashStr = `${platformId}${amount}${currency}${orderId}${apiKey}`;
-        const hash = crypto.createHash('md5').update(hashStr).digest('hex');
+        // PassimPay Hash Formula (from official PHP wrapper):
+        // 1. Prepare payload with platform_id, order_id, amount
+        // 2. http_build_query(payload)
+        // 3. hash_hmac('sha256', query, secretKey)
 
-        // PassimPay API Endpoint (v1)
-        // Note: Check if the endpoint is actually api.passimpay.io/v1/payment/create
-        // or a direct form post. Most modern APIs use POST.
-
-        const payload = {
+        const paramsData: Record<string, string> = {
             platform_id: platformId,
-            amount: amount,
-            currency: currency,
             order_id: orderId,
-            hash: hash,
-            custom_id: userId, // We'll use this in Webhook to identify the user
-            success_url: 'https://richpredict.com/Successful',
-            fail_url: 'https://richpredict.com/FailedPurchase'
+            amount: amount,
         };
 
-        // We return the payload so the frontend can submit it or we can do it here
-        // Usually, we call the API to get a Redirect URL
+        // Standard http_build_query in PHP order matters
+        const searchParams = new URLSearchParams();
+        searchParams.append('platform_id', paramsData.platform_id);
+        searchParams.append('order_id', paramsData.order_id);
+        searchParams.append('amount', paramsData.amount);
 
-        const response = await fetch('https://api.passimpay.io/v2/payment/create', {
+        const payloadStr = searchParams.toString();
+        const hash = crypto.createHmac('sha256', apiKey).update(payloadStr).digest('hex');
+
+        searchParams.append('hash', hash);
+
+        console.log('PassimPay Request params:', searchParams.toString());
+
+        const response = await fetch('https://api.passimpay.io/createorder', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            body: searchParams.toString()
         });
 
-        // Verifying response
         const text = await response.text();
-        console.log(`PassimPay API Response (Status: ${response.status}):`, text);
+        console.log(`PassimPay Response (${response.status}):`, text);
 
         let result;
         try {
             result = JSON.parse(text);
         } catch (e) {
-            console.error('PassimPay sent non-JSON:', text);
             return NextResponse.json({
-                error: `PassimPay API Error: Received status ${response.status}. Please check your Platform ID and API Key in Vercel settings.`
+                error: `PassimPay API Error (Status ${response.status}). The service might be temporarily unavailable.`
             }, { status: 500 });
         }
 
-        if (result.status === 'success' || result.url) {
-            return NextResponse.json({ url: result.url || result.data?.url });
+        if (result.result === 1 && result.url) {
+            return NextResponse.json({ url: result.url });
         } else {
-            console.error('PassimPay Error JSON:', result);
+            console.error('PassimPay Error Result:', result);
             return NextResponse.json({
-                error: result.message || result.error || 'PassimPay reported an error creating the invoice.'
+                error: result.message || 'PassimPay reported an error creating the invoice.'
             }, { status: 500 });
         }
+
     } catch (err: any) {
         console.error('Payment creation error:', err.message);
         return NextResponse.json({ error: `Internal server error: ${err.message}` }, { status: 500 });

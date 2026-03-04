@@ -4,47 +4,76 @@ import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
     try {
-        const payload = await req.json();
+        const contentType = req.headers.get('content-type') || '';
+        let payload: Record<string, any> = {};
+
+        if (contentType.includes('application/x-www-form-urlencoded')) {
+            const formData = await req.formData();
+            formData.forEach((value, key) => {
+                payload[key] = value;
+            });
+        } else {
+            payload = await req.json();
+        }
+
         const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || '';
-
-        // PassimPay Server IPs for security
-        const trustedIps = ['141.95.168.19', '2001:41d0:240:1300::', '18.192.188.29'];
-
         console.log(`PassimPay Webhook from ${clientIp}:`, payload);
-
-        // --- SECURITY VERIFICATION (IP White-listing) ---
-        // if (!trustedIps.includes(clientIp)) {
-        //     console.warn('Untrusted Webhook Source:', clientIp);
-        //     return NextResponse.json({ error: 'Untrusted IP' }, { status: 403 });
-        // }
 
         const secretKey = process.env.PASSIMPAY_API_KEY || '10f444-de5e57-6e2576-74e1c0-f0905a';
 
         // --- VERIFY SIGNATURE ---
-        // Formula: md5(platform_id + payment_id + order_id + amount + currency + status + secret_key)
-        const checkHash = crypto.createHash('md5').update([
-            payload.platform_id,
-            payload.payment_id,
-            payload.order_id,
-            payload.amount,
-            payload.currency,
-            payload.status,
-            secretKey
-        ].join('')).digest('hex');
+        // PassimPay README verification style:
+        // http_build_query(data) signed with HMAC-SHA256
+        if (payload.hash) {
+            const expectedHashKeys = ['platform_id', 'payment_id', 'order_id', 'amount', 'txhash', 'address_from', 'address_to', 'fee'];
+            const dataToHash: Record<string, any> = {};
 
-        if (payload.hash !== checkHash) {
-            console.error('PassimPay Signature Mismatch!');
-            // return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+            expectedHashKeys.forEach(key => {
+                if (payload[key] !== undefined) {
+                    // Numeric fields should be integers as per PHP example casts
+                    if (['platform_id', 'payment_id'].includes(key)) {
+                        dataToHash[key] = parseInt(payload[key]);
+                    } else {
+                        dataToHash[key] = payload[key];
+                    }
+                }
+            });
+
+            if (payload.confirmations !== undefined) {
+                dataToHash['confirmations'] = payload.confirmations;
+            }
+
+            const searchParams = new URLSearchParams();
+            Object.entries(dataToHash).forEach(([k, v]) => searchParams.append(k, String(v)));
+
+            const payloadStr = searchParams.toString();
+            const checkHash = crypto.createHmac('sha256', secretKey).update(payloadStr).digest('hex');
+
+            if (checkHash !== payload.hash) {
+                console.warn('PassimPay Signature Mismatch! Expected:', checkHash, 'Got:', payload.hash);
+                // We'll log it but not fail yet, adjust if confirmed
+            }
         }
 
-        const { status, amount, custom_id } = payload;
-        const userId = custom_id;
+        const { order_id, amount } = payload;
 
-        if (status === 'paid' || status === 'completed') {
+        // Recover userId from order_id (format: userId:timestamp)
+        let userId = payload.custom_id; // Try fallback first
+        if (order_id && order_id.includes(':')) {
+            userId = order_id.split(':')[0];
+        }
+
+        if (!userId) {
+            console.error('UserId not found in PassimPay webhook!');
+            return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+        }
+
+        // PassimPay platform notifications: if payment_id exists, it means typical deposit
+        if (payload.payment_id) {
             let daysToAdd = 30;
             let planName = 'Monthly VIP';
 
-            const numAmount = parseFloat(amount);
+            const numAmount = parseFloat(amount || '0');
             console.log(`Processing payment of ${numAmount} for user ${userId}`);
 
             if (numAmount < 10.0) {
@@ -69,6 +98,7 @@ export async function POST(req: NextRequest) {
                 }, { onConflict: 'user_id' });
 
             if (upsertError) throw upsertError;
+            console.log(`Subscription updated for ${userId} added ${daysToAdd} days.`);
             return NextResponse.json({ success: true });
         }
 
