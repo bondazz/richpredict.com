@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
                 headers: [
                     {
                         key: 'Content-Security-Policy',
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.cdnfonts.com; img-src 'self' data: https:; font-src 'self' https://fonts.cdnfonts.com; connect-src 'self' https://xacflkmlqvifsxwysofm.supabase.co https://vitals.vercel-insights.com; frame-ancestors 'none';",
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.cdnfonts.com; img-src 'self' data: https: https://www.google-analytics.com; font-src 'self' https://fonts.cdnfonts.com; connect-src 'self' https://xacflkmlqvifsxwysofm.supabase.co https://vitals.vercel-insights.com https://www.google-analytics.com; frame-ancestors 'none';",
                     },
                     {
                         key: 'Cross-Origin-Opener-Policy',
