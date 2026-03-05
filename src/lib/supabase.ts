@@ -176,12 +176,18 @@ export const getPremiumPredictions = async (sport: string = 'Football') => {
     return data as Prediction[];
 }
 
+const PREDICTION_LIST_FIELDS = `
+    id, created_at, home_team, away_team, prediction, odds, match_date, match_time, 
+    league, league_id, status, result, slug, confidence, category, is_premium, 
+    dist_home, dist_draw, dist_away
+`;
+
 export const getPredictions = async (limit = 50, category?: string, date?: string) => {
     // Stage 1: Try with category filter if specified
     let query = supabase
         .from('predictions')
         .select(`
-            *,
+            ${PREDICTION_LIST_FIELDS},
             leagues (
                 name,
                 logo_url,
@@ -198,8 +204,6 @@ export const getPredictions = async (limit = 50, category?: string, date?: strin
     // Filter by date if provided (match_date is TIMESTAMP or DATE)
     if (date) {
         query = query.eq('match_date', date);
-        // If it's a timestamp, we might need a range, but usually it's stored as DATE or we handle it via eq if exactly matched
-        // or we can do: .gte('match_date', `${date}T00:00:00Z`).lt('match_date', `${date}T23:59:59Z`)
     }
 
     // Exclude premium matches from the regular list
@@ -221,7 +225,7 @@ export const getPredictions = async (limit = 50, category?: string, date?: strin
     console.warn('Falling back to simple select:', error.message);
     let simpleQuery = supabase
         .from('predictions')
-        .select('*')
+        .select(PREDICTION_LIST_FIELDS)
         .order('match_date', { ascending: false })
         .limit(limit);
 
@@ -242,7 +246,7 @@ export const getPredictions = async (limit = 50, category?: string, date?: strin
 export const getBlogPosts = async (limit = 20) => {
     const { data, error } = await supabase
         .from('blog_posts')
-        .select('*')
+        .select('id, title, slug, excerpt, image_url, category, created_at, language')
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -448,7 +452,7 @@ export const getPredictionsByCountry = async (countryId: string, limit = 50, dat
     let query = supabase
         .from('predictions')
         .select(`
-            *,
+            ${PREDICTION_LIST_FIELDS},
             leagues!inner (
                 name,
                 logo_url,
@@ -625,7 +629,7 @@ export const getFeaturedMatches = async (countryId?: string, limit = 10, categor
     let query = supabase
         .from('predictions')
         .select(`
-            *,
+            ${PREDICTION_LIST_FIELDS},
             leagues!inner (
                 name,
                 logo_url,
