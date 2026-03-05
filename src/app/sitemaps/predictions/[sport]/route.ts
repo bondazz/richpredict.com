@@ -38,7 +38,7 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
             .from('predictions')
             .select('home_team, away_team, slug, created_at, category')
             .order('created_at', { ascending: false })
-            .limit(10000);
+            .limit(50000);
 
         if (error) {
             console.error('Sitemap Error:', error);
