@@ -9,6 +9,9 @@ import { supabase, BlogPost, Prediction, getPredictions, getBlogPosts } from "@/
 export const metadata: Metadata = {
     title: "Latest Sports News & AI Football Predictions | RICHPREDICT",
     description: "Stay ahead with RICHPREDICT Latest Sports News. Expert analysis and high-accuracy football predictions.",
+    alternates: {
+        canonical: 'https://richpredict.com/news',
+    },
 };
 
 export default async function NewsPage() {

@@ -11,9 +11,6 @@ export const metadata: Metadata = {
         template: '%s | RichPredict'
     },
     description: 'Expert football predictions, live scores, and match results for EPL, Champions League, and global leagues.',
-    alternates: {
-        canonical: '/',
-    },
     robots: {
         index: true,
         follow: true,

@@ -76,17 +76,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             return {
                 title: `${match.home_team} vs ${match.away_team} Predictions - Match Insight & Tips`,
                 description: `Professional AI football predictions for ${match.home_team} vs ${match.away_team}. Win probability, H2H statistics, and expert betting insights for today's match.`,
+                alternates: {
+                    canonical: `https://richpredict.com/predictions/${slug}`,
+                },
             };
         }
 
         // Try country fallback
         const country = await getCountryByName(slug);
         if (country) {
-            return { title: `${country.name} Football Predictions` };
+            return {
+                title: `${country.name} Football Predictions`,
+                alternates: {
+                    canonical: `https://richpredict.com/predictions/${slug.toLowerCase()}`,
+                },
+            };
         }
     }
 
-    return { title: "Predictions - RichPredict" };
+    return {
+        title: "Predictions - RichPredict",
+        alternates: {
+            canonical: 'https://richpredict.com/predictions',
+        },
+    };
 }
 
 export default async function UnifiedPredictionsPage({ params, searchParams }: Props) {
