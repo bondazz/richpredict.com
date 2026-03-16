@@ -31,23 +31,34 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
     const baseUrl = 'https://richpredict.com';
 
     try {
-        // Correctly filter by category in the DB for maximum performance and link count
-        let query = supabaseAdmin
-            .from('predictions')
-            .select('home_team, away_team, slug, created_at, category')
-            .order('created_at', { ascending: false })
-            .limit(50000);
+        let allMatches: any[] = [];
+        const CHUNK_SIZE = 1000;
+        const MAX_LIMIT = 50000;
 
-        if (sport === 'football') {
-            // Include matches where category is 'Football', 'football', or null
-            query = query.or('category.ilike.football,category.is.null');
-        } else {
-            query = query.ilike('category', sport);
+        for (let i = 0; i < MAX_LIMIT; i += CHUNK_SIZE) {
+            let query = supabaseAdmin
+                .from('predictions')
+                .select('home_team, away_team, slug, created_at, category')
+                .order('created_at', { ascending: false })
+                .range(i, i + CHUNK_SIZE - 1);
+
+            if (sport === 'football') {
+                query = query.or('category.ilike.football,category.is.null');
+            } else {
+                query = query.ilike('category', sport);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+
+            allMatches = [...allMatches, ...data];
+
+            // If we got fewer than CHUNK_SIZE, we've reached the end
+            if (data.length < CHUNK_SIZE) break;
         }
 
-        const { data: matches, error } = await query;
-
-        if (error) throw error;
+        const matches = allMatches;
 
         const urlEntries = (matches || []).map(match => {
             const date = formatDate(match.created_at || new Date().toISOString());
