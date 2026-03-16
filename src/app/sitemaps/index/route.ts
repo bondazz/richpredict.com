@@ -10,11 +10,11 @@ export async function GET() {
     const now = formatDate(new Date());
 
     try {
-        // We use the direct route patterns that Next.js understands perfectly
+        // Use .xml extensions to make Google bot's life easier
         const sitemaps = [
-            `${baseUrl}/sitemaps/static`,
-            `${baseUrl}/sitemaps/countries`,
-            `${baseUrl}/sitemaps/news`
+            `${baseUrl}/sitemap-static.xml`,
+            `${baseUrl}/sitemap-countries.xml`,
+            `${baseUrl}/sitemap-news.xml`
         ];
 
         // Optimized: Fetch only a small sample of categories to identify active sports
@@ -35,7 +35,7 @@ export async function GET() {
         const allSports = Array.from(new Set([...defaultSports, ...uniqueSports]));
 
         allSports.forEach(sport => {
-            sitemaps.push(`${baseUrl}/sitemaps/predictions/${sport}`);
+            sitemaps.push(`${baseUrl}/sitemap-predictions-${sport}.xml`);
         });
 
         const sitemapIndexXML = `<?xml version="1.0" encoding="UTF-8"?>

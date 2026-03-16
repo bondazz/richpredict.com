@@ -31,20 +31,25 @@ export async function GET(req: Request, context: { params: Promise<{ sport: stri
     const baseUrl = 'https://richpredict.com';
 
     try {
-        const { data: matches, error } = await supabaseAdmin
+        // Correctly filter by category in the DB for maximum performance and link count
+        let query = supabaseAdmin
             .from('predictions')
             .select('home_team, away_team, slug, created_at, category')
             .order('created_at', { ascending: false })
-            .limit(10000); // Safe limit for performance
+            .limit(50000);
+
+        if (sport === 'football') {
+            // Include matches where category is 'Football', 'football', or null
+            query = query.or('category.ilike.football,category.is.null');
+        } else {
+            query = query.ilike('category', sport);
+        }
+
+        const { data: matches, error } = await query;
 
         if (error) throw error;
 
-        const filteredMatches = (matches || []).filter(m => {
-            const cat = m.category?.toLowerCase() || 'football';
-            return sport === 'football' ? (cat === 'football' || cat === '') : (cat === sport);
-        });
-
-        const urlEntries = filteredMatches.map(match => {
+        const urlEntries = (matches || []).map(match => {
             const date = formatDate(match.created_at || new Date().toISOString());
             const finalSlug = generateSEOSlug(match.home_team, match.away_team, match.slug || '');
             return `  <url>
