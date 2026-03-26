@@ -320,7 +320,7 @@ export default function AdvertisePage() {
                 </div>
 
                 <div className="text-center pb-4 opacity-10">
-                    <p className="text-[9px] font-black text-white uppercase tracking-[0.4em]">RichPredict Global Advertising Network &copy; 2026</p>
+                    <p className="text-[9px] font-black text-white uppercase tracking-[0.4em]">RICHPREDICT.COM Global Advertising Network &copy; 2026</p>
                 </div>
 
             </div>

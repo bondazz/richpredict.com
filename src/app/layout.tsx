@@ -54,7 +54,7 @@ export default function RootLayout({
                 <meta name="yandex-verification" content="e98f2fab0b37b892" />
                 <meta name="cryptomus" content="380f1a1a" />
             </head>
-            <body className={cn("min-h-screen bg-[var(--fs-bg)] font-sans antialiased uppercase")}>
+            <body className={cn("min-h-screen bg-[var(--fs-bg)] font-sans antialiased")}>
                 <AuthProvider>
                     {children}
                     <AuthModal />
