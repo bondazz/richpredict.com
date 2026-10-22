@@ -7,8 +7,8 @@ import SidebarAd from "@/components/Ads/SidebarAd";
 import { supabase, BlogPost, Prediction, getPredictions, getBlogPosts } from "@/lib/supabase";
 
 export const metadata: Metadata = {
-    title: "Latest Sports News & AI Football Predictions | RICHPREDICT",
-    description: "Stay ahead with RICHPREDICT Latest Sports News. Expert analysis and high-accuracy football predictions.",
+    title: "Latest Sports News & AI Match Previews",
+    description: "Stay ahead with RichPredict sports news, expert analysis, and high-accuracy football match predictions.",
     alternates: {
         canonical: 'https://richpredict.com/news',
     },

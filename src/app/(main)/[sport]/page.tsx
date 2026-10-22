@@ -17,6 +17,7 @@ import SidebarAd from "@/components/Ads/SidebarAd";
 import TopTicker from "@/components/layout/TopTicker";
 import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches";
 import { Flag } from "@/components/ui/Flag";
+import { notFound } from "next/navigation";
 import DateNavigator from "@/components/layout/DateNavigator";
 import GameTime from "@/components/predictions/GameTime";
 
@@ -25,14 +26,22 @@ interface Props {
     searchParams: Promise<{ date?: string }>;
 }
 
+const VALID_SPORTS = ['tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball', 'football'];
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { sport: sportParam } = await params;
-    const sport = sportParam.charAt(0).toUpperCase() + sportParam.slice(1);
+    const sportSlug = sportParam.toLowerCase();
+
+    if (!VALID_SPORTS.includes(sportSlug)) {
+        notFound();
+    }
+
+    const sport = sportSlug.charAt(0).toUpperCase() + sportSlug.slice(1);
     return {
-        title: `AI ${sport} Predictions & Betting Tips | RichPredict`,
+        title: `AI ${sport} Predictions & Betting Tips`,
         description: `Get the most accurate AI-powered ${sport} predictions, analytics, and betting tips. High-probability outcomes for all major ${sport} events.`,
         alternates: {
-            canonical: `https://richpredict.com/${sportParam.toLowerCase()}`,
+            canonical: `https://richpredict.com/${sportSlug}`,
         },
     };
 }
@@ -45,18 +54,13 @@ export default async function SportPage({ params, searchParams }: Props) {
     const selectedDate = sp.date || new Date().toISOString().split('T')[0];
 
     const sportSlug = sportParam.toLowerCase();
-    const sportName = sportSlug.charAt(0).toUpperCase() + sportSlug.slice(1);
 
-    // Validate sport
-    const validSports = ['tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball', 'football'];
-    if (!validSports.includes(sportSlug)) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-                <h1 className="text-2xl font-bold uppercase tracking-widest text-white font-[Klapt]">Sport Not Found</h1>
-                <Link href="/" className="text-[var(--fs-yellow)] hover:text-white transition-colors uppercase font-black text-xs">Return Home</Link>
-            </div>
-        );
+    // Validate sport - Return true HTTP 404 if invalid
+    if (!VALID_SPORTS.includes(sportSlug)) {
+        notFound();
     }
+
+    const sportName = sportSlug.charAt(0).toUpperCase() + sportSlug.slice(1);
 
     let predictions: Prediction[] = [];
     let pinnedLeagues: any[] = [];
@@ -74,6 +78,12 @@ export default async function SportPage({ params, searchParams }: Props) {
             getBlogPosts(3)
         ]);
         predictions = preds || [];
+
+        // Fallback: If no matches scheduled for selectedDate, display latest available matches
+        if (predictions.length === 0) {
+            predictions = (await getPredictions(150, sportName)) || [];
+        }
+
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
         premiumCount = pCount || 0;

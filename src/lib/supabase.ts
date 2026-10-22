@@ -656,11 +656,41 @@ export const getFeaturedMatches = async (countryId?: string, limit = 10, categor
         }
     }
 
-    const { data, error } = await query.limit(limit * 3);
+    let { data, error } = await query.limit(limit * 3);
 
-    if (error) {
-        console.error('Error fetching featured matches:', error);
-        return [];
+    // Fallback: If no matches found for future dates, fetch latest available matches
+    if (!data || data.length === 0) {
+        let fallbackQuery = supabase
+            .from('predictions')
+            .select(`
+                ${PREDICTION_LIST_FIELDS},
+                leagues!inner (
+                    name,
+                    logo_url,
+                    country_id,
+                    countries (
+                        name,
+                        flag_url,
+                        code
+                    )
+                )
+            `)
+            .order('match_date', { ascending: false });
+
+        if (countryId) {
+            fallbackQuery = fallbackQuery.eq('leagues.country_id', countryId);
+        }
+
+        if (category) {
+            if (category.toLowerCase() === 'football') {
+                fallbackQuery = fallbackQuery.or(`category.ilike.Football,category.is.null`);
+            } else {
+                fallbackQuery = fallbackQuery.ilike('category', category);
+            }
+        }
+
+        const fallbackRes = await fallbackQuery.limit(limit * 3);
+        data = fallbackRes.data || [];
     }
 
     // Randomize and slice

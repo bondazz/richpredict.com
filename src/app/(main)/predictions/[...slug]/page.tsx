@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             const countryName = country.name;
             const sportName = sport.charAt(0).toUpperCase() + sport.slice(1);
             return {
-                title: `${countryName} ${sportName} Predictions & Betting Tips | Expert Analysis`,
+                title: `${countryName} ${sportName} Predictions & Betting Tips`,
                 description: `Get the most accurate AI-powered ${sport} predictions for ${countryName}. Expert betting tips, match analysis, and high-probability outcomes for all ${countryName} leagues.`,
                 alternates: { canonical: `https://richpredict.com/predictions/${sport.toLowerCase()}/${slug.toLowerCase()}` }
             };
@@ -95,9 +95,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     return {
-        title: "Predictions - RichPredict",
-        alternates: {
-            canonical: 'https://richpredict.com/predictions',
+        title: "Match Not Found",
+        robots: {
+            index: false,
+            follow: false,
         },
     };
 }
@@ -142,6 +143,12 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                 getBlogPosts(3)
             ]);
             predictions = preds || [];
+
+            // Fallback: If no matches for selectedDate, show latest matches for this country so it's never empty
+            if (predictions.length === 0) {
+                predictions = (await getPredictionsByCountry(country.id, 100)) || [];
+            }
+
             countryLeagues = leagues || [];
             allCountries = countries || [];
             premiumCount = pCount || 0;

@@ -2,13 +2,13 @@ import React from 'react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Football Predictions, Results, EPL & Champions League | RichPredict',
+    title: 'Football Predictions, Match Previews & Betting Tips',
     description: 'Get free football predictions, match results, and expert betting tips for Premier League, Champions League, and all major sports leagues worldwide.',
     alternates: {
         canonical: 'https://richpredict.com',
     },
     openGraph: {
-        title: 'Football Predictions, Results, EPL & Champions League | RichPredict',
+        title: 'Football Predictions, Match Previews & Betting Tips',
         description: 'Get free football predictions, match results, and expert betting tips for Premier League, Champions League, and all major sports leagues worldwide.',
         url: 'https://richpredict.com',
         siteName: 'RichPredict',
@@ -76,6 +76,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             getBlogPosts(3)
         ]);
         predictions = preds || [];
+
+        // Fallback: If no matches for selectedDate, show latest available matches so the page is never blank
+        if (predictions.length === 0) {
+            predictions = (await getPredictions(300, 'Football')) || [];
+        }
+
         regions = regs || [];
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
@@ -366,13 +372,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                             {index === 0 && <RichPredictNews posts={blogPosts} />}
                         </React.Fragment>
                     )) : (
-                        <div className="p-20 text-center bg-[var(--fs-header)] rounded-sm border border-white/5 space-y-4">
-                            <Loader2 className="w-8 h-8 animate-spin text-[var(--fs-yellow)] mx-auto" />
-                            <p className="text-[11px] font-black uppercase tracking-widest text-[var(--fs-text-dim)]">
-                                NO_DATA_DETECTED_IN_CLUSTER
-                                <br />
-                                <span className="text-white/20">Check Supabase connection</span>
-                            </p>
+                        <div className="p-16 text-center bg-[var(--fs-header)] rounded-sm border border-white/5 space-y-4">
+                            <Trophy className="w-10 h-10 text-white/20 mx-auto" />
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-black uppercase text-white tracking-wider">No Matches Scheduled For This Date</h3>
+                                <p className="text-[11px] text-white/40">Check our predictions archive or select another date from the calendar above.</p>
+                            </div>
+                            <Link href="/predictions" className="inline-block px-4 py-2 bg-[var(--fs-yellow)] text-black text-[10px] font-black uppercase tracking-widest rounded-sm hover:bg-yellow-400 transition-colors">
+                                Browse All Predictions
+                            </Link>
                         </div>
                     )}
                     <AIPredictTrust />

@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         const capitalized = lowerSlug.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         const url = `https://richpredict.com/news/${lowerSlug.replace(/ /g, '-')}`;
         return {
-            title: `Latest ${capitalized} News & AI Predictions | RICHPREDICT`,
+            title: `Latest ${capitalized} News & AI Predictions`,
             description: `Stay ahead with RICHPREDICT Latest ${capitalized} Sports News. Expert analysis and high-accuracy predictions.`,
             alternates: { canonical: url },
             robots: {
@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const authorName = "James Harrison";
 
     return {
-        title: `${post.meta_title || post.title} | RichPredict News`,
+        title: post.meta_title || post.title,
         description: post.meta_description || post.excerpt,
         alternates: {
             canonical: url,
