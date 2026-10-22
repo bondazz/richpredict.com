@@ -99,6 +99,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                 <div className={cn("w-full h-full", adView === 'feedback' ? "hidden" : "block")}>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setAdView('feedback'); }}
+                                        aria-label="Close advertisement"
                                         className="absolute top-0 left-0 w-[22px] h-[22px] bg-white/80 flex items-center justify-center z-[100] rounded-br-[4px] border-none"
                                     >
                                         <svg className="w-3.5 h-3.5 fill-[#333]" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
@@ -137,6 +138,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                 <div className={cn("w-full h-full bg-[#f8f9fa] flex-col justify-center items-center text-center", adView === 'feedback' ? "flex" : "hidden")}>
                                     <button
                                         onClick={() => setAdView('main')}
+                                        aria-label="Return to advertisement"
                                         className="absolute top-0 left-0 w-[22px] h-[22px] bg-white/80 flex items-center justify-center z-[100] rounded-br-[4px]"
                                     >
                                         <svg className="w-4 h-4 fill-[#333]" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
@@ -236,6 +238,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                         <Button
                             variant="ghost"
                             onClick={() => setAuthModalOpen(true)}
+                            aria-label={user ? (user.user_metadata?.full_name?.split(' ')[0] || 'User Profile') : 'Login / Account'}
                             className="flex items-center gap-1.5 px-2 md:px-3 hover:bg-white/5 text-[var(--fs-text-dim)] hover:text-white transition-colors h-8 md:h-10 shrink-0"
                         >
                             <div className="bg-white/5 p-1 rounded-sm">

@@ -36,7 +36,7 @@ export default async function MainLayout({
           countriesByRegion={countriesByRegion}
           regionOrder={regionOrder}
         />
-        <main className="flex-1 w-full bg-[var(--fs-bg)]">
+        <main id="main-content" className="flex-1 w-full bg-[var(--fs-bg)]">
           {children}
         </main>
         <Footer

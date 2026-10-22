@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ards-project/ard-spec/main/spec/schemas/ai-catalog.schema.json",
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "RichPredict",
+    "documentationUrl": "https://richpredict.com/faq",
+    "logoUrl": "https://richpredict.com/icon.svg"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:richpredict.com:predictions:sports",
+      "displayName": "RichPredict AI Sports Analytics & Predictions",
+      "type": "application/ai-catalog+json",
+      "url": "https://richpredict.com/predictions",
+      "description": "Real-time AI probability forecasting and match statistics for football, tennis, and basketball.",
+      "capabilities": [
+        "FootballPredictions",
+        "TennisPredictions",
+        "BasketballPredictions",
+        "H2HAnalytics",
+        "MatchOdds"
+      ],
+      "representativeQueries": [
+        "what are today's football predictions and win probabilities",
+        "find high confidence betting tips for Premier League matches",
+        "get AI tennis predictions and tournament odds"
+      ]
+    }
+  ]
+}

@@ -50,6 +50,7 @@ export default function AdminLoginPage() {
                             <input
                                 name="email"
                                 type="email"
+                                autoComplete="email"
                                 defaultValue="info@richpredict.com"
                                 required
                                 className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-700"
@@ -62,6 +63,7 @@ export default function AdminLoginPage() {
                             <input
                                 name="password"
                                 type="password"
+                                autoComplete="current-password"
                                 required
                                 className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-700"
                                 placeholder="••••••••••••"

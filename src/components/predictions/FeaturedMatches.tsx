@@ -29,6 +29,7 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
                             <div className="flex items-center gap-2">
                                 {matches[0]?.leagues?.countries?.flag_url && (
                                     <div
+                                        role="img"
                                         className="w-[18px] h-[12px] bg-center bg-no-repeat bg-cover rounded-[1px] shadow-sm flex-shrink-0 pointer-events-none select-none"
                                         style={{ backgroundImage: `url(${matches[0].leagues.countries.flag_url})` }}
                                         aria-label={`${matches[0].leagues.countries.name} flag`}
@@ -79,6 +80,7 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
                                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
                                     <div className="flex items-center gap-2 sm:gap-2.5">
                                         <div
+                                            role="img"
                                             className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
                                             style={{ backgroundImage: `url(${getLogo(match.home_team)})` }}
                                             aria-label={`${match.home_team} logo`}
@@ -87,6 +89,7 @@ export default function FeaturedMatches({ matches, dbLogoMap }: FeaturedMatchesP
                                     </div>
                                     <div className="flex items-center gap-2 sm:gap-2.5">
                                         <div
+                                            role="img"
                                             className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-center bg-no-repeat bg-contain pointer-events-none select-none"
                                             style={{ backgroundImage: `url(${getLogo(match.away_team)})` }}
                                             aria-label={`${match.away_team} logo`}

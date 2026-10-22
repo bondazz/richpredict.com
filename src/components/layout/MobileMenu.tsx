@@ -35,6 +35,9 @@ export default function MobileMenu({
 
                     {/* Menu Drawer */}
                     <motion.div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Mobile Navigation Menu"
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
@@ -98,6 +101,7 @@ export default function MobileMenu({
                                         >
                                             {league.countries?.flag_url && (
                                                 <div
+                                                    role="img"
                                                     className="w-4 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none select-none"
                                                     style={{ backgroundImage: `url(${league.countries.flag_url})` }}
                                                     aria-label={`${league.countries.name} flag`}

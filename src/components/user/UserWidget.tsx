@@ -93,6 +93,7 @@ export default function UserWidget() {
                     </div>
                     <button
                         onClick={() => signOut()}
+                        aria-label="Sign Out"
                         className="p-2 text-white/20 hover:text-red-500 transition-colors"
                         title="Sign Out"
                     >

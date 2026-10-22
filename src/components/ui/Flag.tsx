@@ -17,9 +17,10 @@ export const Flag: FC<FlagProps> = ({ code, url, name, className, squared = fals
     if (url) {
         return (
             <div
+                role="img"
                 className={cn("bg-center bg-no-repeat bg-cover flex-shrink-0", className)}
                 style={{ backgroundImage: `url(${url})` }}
-                aria-label={name}
+                aria-label={name || "Country flag"}
             />
         );
     }

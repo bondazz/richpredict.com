@@ -20,18 +20,21 @@ export function AIPredictTrust() {
 
                 <div className="mt-10 flex flex-wrap justify-center gap-x-4 md:gap-x-8 gap-y-8 items-center px-4 transition-all duration-500">
                     <div
+                        role="img"
                         className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 transition-all duration-500 select-none cursor-help"
                         style={{ backgroundImage: 'url(/images/flashscore-logo.png.png)' }}
                         aria-label="Flashscore"
                         title="Flashscore"
                     />
                     <div
+                        role="img"
                         className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
                         style={{ backgroundImage: 'url(/images/beinsport-logo.svg)' }}
                         aria-label="beIN Sports"
                         title="beIN Sports"
                     />
                     <div
+                        role="img"
                         className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
                         style={{
                             backgroundImage: 'url(/images/Yahoo_Sports_New_Logo.png)',
@@ -41,12 +44,14 @@ export function AIPredictTrust() {
                         title="Yahoo Sports"
                     />
                     <div
+                        role="img"
                         className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
                         style={{ backgroundImage: 'url(/images/squawka-logo-footer.svg)' }}
                         aria-label="Squawka"
                         title="Squawka"
                     />
                     <div
+                        role="img"
                         className="w-16 md:w-24 h-8 bg-center bg-no-repeat bg-contain opacity-100 grayscale hover:grayscale-0 transition-all duration-500 select-none cursor-help"
                         style={{
                             backgroundImage: 'url(/images/BETMGM-logo.webp)',

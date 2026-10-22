@@ -55,6 +55,7 @@ export const RichPredictNews = ({ posts }: Props) => {
                             <div className="relative w-[100px] md:w-full aspect-[16/9] overflow-hidden rounded-lg bg-white/5 border border-white/10 shadow-lg mb-0 md:mb-3 shrink-0">
                                 {post.image_url ? (
                                     <div
+                                        role="img"
                                         className="w-full h-full bg-center bg-no-repeat bg-cover transition-all duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 pointer-events-none select-none"
                                         style={{ backgroundImage: `url(${post.image_url})` }}
                                         aria-label={post.title}

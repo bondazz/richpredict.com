@@ -1,22 +1,31 @@
-# AI Football Predict - Technical Overview & Structure
+# RichPredict
 
-AI Football Predict is a high-performance analytics platform for football predictions. It uses advanced neural networks to provide win probabilities and match insights.
+> RichPredict is an AI-driven sports analytics and predictive intelligence platform providing high-probability forecasts for football, tennis, basketball, and global sports leagues.
 
-## Core Structure
-- **Home**: Main dashboard with upcoming fixtures and top AI tips.
-- **Predictions**: Detail pages for matches (`/prediction/[match-id]`).
-- **Leagues**: League-specific prediction lists (`/league/[league-slug]`).
-- **Premium**: Gated elite value bets and deep analytics.
-- **Blog**: SEO-focused match previews and tactical analysis.
+RichPredict continuously processes historical head-to-head records, current team form, expected goals (xG), lineup dynamics, odds discrepancies, and algorithmic confidence metrics to deliver data-backed match predictions and statistical insights.
 
-## Data Points Analyzed
-- H2H History (Recent 5-10 years)
-- Current Form (Last 5 matches)
-- Player Injuries & Suspensions
-- Tactical Setups & xG Data
-- Market Odds Discrepancies (Value Bets)
+## Core Sports & Predictions
 
-## Technical Features
-- Framework: Next.js 15 (App Router)
-- SEO: Dynamic JSON-LD (SportsEvent, AnalysisNewsArticle)
-- Optimization: Zero LCP shift, WebP imagery, Edge Runtime OG Images.
+- [Football Predictions](https://richpredict.com/football): Comprehensive AI match previews, high-confidence 1X2 tips, over/under forecasts, and league analytics.
+- [Tennis Predictions](https://richpredict.com/tennis): ATP, WTA, and Grand Slam tournament projections, player form indexes, and surface analysis.
+- [Basketball Predictions](https://richpredict.com/basketball): NBA, EuroLeague, and international basketball game outcomes and point-spread insights.
+- [All Sports Predictions](https://richpredict.com/predictions): Centralized directory of upcoming fixtures, expert analytics, and probability distributions.
+- [Sports News & Previews](https://richpredict.com/news): Editorial match previews, breaking team news, injury updates, and tactical breakdowns.
+
+## Platform Information & Support
+
+- [About RichPredict](https://richpredict.com/): Official home page, system accuracy metrics, and analytical model overview.
+- [Contact Support](https://richpredict.com/contact): Direct editorial contact, partnership inquiries, and 24/7 technical assistance.
+- [Privacy Policy](https://richpredict.com/privacy): Data protection standards, user privacy guidelines, and GDPR compliance statements.
+- [Terms of Use](https://richpredict.com/terms): Terms of service, analytics disclaimer, and usage rules.
+- [Frequently Asked Questions (FAQ)](https://richpredict.com/faq): Common inquiries regarding AI algorithms, model training, and subscription tiers.
+- [GDPR Compliance](https://richpredict.com/gdpr): Data processing, journalistic exemption, and privacy protection protocols.
+- [Impressum](https://richpredict.com/impressum): Legal imprint and company information.
+- [Mobile Web App](https://richpredict.com/mobile): Progressive web application details and installation instructions.
+
+## Machine-Readable Resources
+
+- [Sitemap Index](https://richpredict.com/sitemap_index.xml): XML index of all sports fixtures, leagues, and dynamic content.
+- [Static Sitemap](https://richpredict.com/sitemap-static.xml): XML list of all primary static routes and sport hubs.
+- [News Sitemap](https://richpredict.com/sitemap-news.xml): Up-to-date XML feed of sports news and tactical previews.
+- [Robots Configuration](https://richpredict.com/robots.txt): Crawler rules and directives for web search engines and AI agents.

@@ -73,18 +73,22 @@ export default function AuthModal() {
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="auth-modal-title"
                 className="relative w-full max-w-md bg-[#001e28] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
             >
                 {/* Header */}
                 <div className="relative h-24 bg-gradient-to-br from-[#164e63] to-[#083344] p-6 flex items-center">
                     <button
                         onClick={() => setAuthModalOpen(false)}
+                        aria-label="Close authentication modal"
                         className="absolute top-4 right-4 p-2 text-white/50 hover:text-white transition-colors"
                     >
                         <X size={20} />
                     </button>
                     <div className="flex flex-col">
-                        <h2 className="text-xl font-black text-white uppercase tracking-tighter font-[Klapt]">
+                        <h2 id="auth-modal-title" className="text-xl font-black text-white uppercase tracking-tighter font-[Klapt]">
                             {authView === 'login' ? 'Welcome Back' : authView === 'signup' ? 'Create Account' : 'Reset Password'}
                         </h2>
                         <p className="text-[11px] font-bold text-white/60 uppercase tracking-widest">
@@ -105,12 +109,14 @@ export default function AuthModal() {
                     <form onSubmit={handleAuth} className="space-y-4">
                         {authView === 'signup' && (
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Full Name</label>
+                                <label htmlFor="auth-fullname" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Full Name</label>
                                 <div className="relative">
                                     <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
                                     <input
+                                        id="auth-fullname"
                                         type="text"
                                         required
+                                        autoComplete="name"
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
                                         placeholder="Enter your name"
@@ -121,12 +127,14 @@ export default function AuthModal() {
                         )}
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Email Address</label>
+                            <label htmlFor="auth-email" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Email Address</label>
                             <div className="relative">
                                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
                                 <input
+                                    id="auth-email"
                                     type="email"
                                     required
+                                    autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Enter your email"
@@ -138,7 +146,7 @@ export default function AuthModal() {
                         {authView !== 'forgot-password' && (
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-center px-1">
-                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Password</label>
+                                    <label htmlFor="auth-password" className="text-[10px] font-black text-white/40 uppercase tracking-widest">Password</label>
                                     {authView === 'login' && (
                                         <button
                                             type="button"
@@ -152,8 +160,10 @@ export default function AuthModal() {
                                 <div className="relative">
                                     <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
                                     <input
+                                        id="auth-password"
                                         type="password"
                                         required
+                                        autoComplete={authView === 'signup' ? 'new-password' : 'current-password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"

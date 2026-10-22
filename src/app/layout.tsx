@@ -55,6 +55,12 @@ export default function RootLayout({
                 <meta name="cryptomus" content="380f1a1a" />
             </head>
             <body className={cn("min-h-screen bg-[var(--fs-bg)] font-sans antialiased")}>
+                <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:bg-[var(--fs-yellow)] focus:text-black focus:font-black focus:px-4 focus:py-2 focus:rounded-md focus:shadow-2xl focus:outline-none"
+                >
+                    Skip to main content
+                </a>
                 <AuthProvider>
                     {children}
                     <AuthModal />

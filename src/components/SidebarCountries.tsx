@@ -42,6 +42,7 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                                 >
                                     {country.flag_url && (
                                         <div
+                                            role="img"
                                             className="w-3.5 h-2.5 bg-center bg-no-repeat bg-cover rounded-[1px] opacity-100 transition-opacity pointer-events-none select-none"
                                             style={{ backgroundImage: `url(${country.flag_url})` }}
                                             aria-label={`${country.name} flag`}

@@ -73,18 +73,22 @@ export default function ContactPage() {
                     <form className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Your Name</label>
+                                <label htmlFor="contact-name" className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Your Name</label>
                                 <input
+                                    id="contact-name"
                                     type="text"
+                                    autoComplete="name"
                                     placeholder="e.g. Alex Smith"
                                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-xs text-white placeholder-white/30 focus:border-[var(--fs-yellow)] focus:outline-none transition-colors"
                                     required
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Email Address</label>
+                                <label htmlFor="contact-email" className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Email Address</label>
                                 <input
+                                    id="contact-email"
                                     type="email"
+                                    autoComplete="email"
                                     placeholder="alex@example.com"
                                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-xs text-white placeholder-white/30 focus:border-[var(--fs-yellow)] focus:outline-none transition-colors"
                                     required
@@ -93,8 +97,9 @@ export default function ContactPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Subject / Inquiry Topic</label>
+                            <label htmlFor="contact-subject" className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Subject / Inquiry Topic</label>
                             <input
+                                id="contact-subject"
                                 type="text"
                                 placeholder="Match Prediction Feedback / Premium Account Support"
                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-xs text-white placeholder-white/30 focus:border-[var(--fs-yellow)] focus:outline-none transition-colors"
@@ -103,8 +108,9 @@ export default function ContactPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Your Message</label>
+                            <label htmlFor="contact-message" className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Your Message</label>
                             <textarea
+                                id="contact-message"
                                 rows={5}
                                 placeholder="Write your message here with as much detail as possible..."
                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-xs text-white placeholder-white/30 focus:border-[var(--fs-yellow)] focus:outline-none transition-colors"

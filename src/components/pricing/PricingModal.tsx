@@ -89,10 +89,14 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="pricing-modal-title"
                 className="relative w-full max-w-4xl bg-[#00141e] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
             >
                 <button
                     onClick={onClose}
+                    aria-label="Close pricing modal"
                     className="absolute top-4 right-4 z-20 p-2 text-white/50 hover:text-white transition-colors bg-white/5 rounded-full"
                 >
                     <X size={20} />
@@ -104,7 +108,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                         <Trophy className="w-6 h-6 text-black" strokeWidth={3} />
                     </div>
                     <div className="space-y-2">
-                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none font-[Klapt]">
+                        <h2 id="pricing-modal-title" className="text-3xl font-black text-white uppercase tracking-tighter leading-none font-[Klapt]">
                             GO <span className="text-[var(--fs-yellow)]">PREMIUM</span>
                         </h2>
                         <p className="text-[12px] font-bold text-white/60 uppercase tracking-widest leading-relaxed">
