@@ -22,25 +22,7 @@ interface HeaderProps {
 export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }: HeaderProps) {
     const { user, setAuthModalOpen } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [adView, setAdView] = useState<'main' | 'feedback'>('main');
-    const [selectedAd, setSelectedAd] = useState({
-        src: "https://tpc.googlesyndication.com/simgad/12096407865385422292",
-        w: 728
-    });
-    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
-
-    useEffect(() => {
-        const ads = [
-            { src: "https://tpc.googlesyndication.com/simgad/12096407865385422292", w: 728 },
-            { src: "https://tpc.googlesyndication.com/simgad/12669755248557285122", w: 970 },
-            { src: "https://tpc.googlesyndication.com/simgad/14562515983077514365", w: 970 }
-        ];
-        const randomAd = ads[Math.floor(Math.random() * ads.length)];
-        setSelectedAd(randomAd);
-        setMounted(true);
-    }, []);
-
     const { title } = useTitle();
 
     const isNewsActive = pathname.startsWith("/news");
@@ -83,83 +65,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                 </div>
             </div>
 
-            {/* 2. AD BANNER AREA - Simulated Google Ad */}
-            <div className="bg-[var(--fs-bg)] py-3 px-2 hidden md:flex justify-center border-b border-white/5">
-                <div className="max-w-[1240px] mx-auto w-full flex justify-center h-[90px]">
-                    <div
-                        style={{ width: mounted ? `${selectedAd.w}px` : '728px' }}
-                        className={cn(
-                            "h-[90px] bg-[#00141E] border border-white/5 relative shadow-md overflow-hidden font-sans cursor-pointer group/ad transition-[width] duration-300",
-                            !mounted && "opacity-0"
-                        )}
-                    >
-                        {mounted && (
-                            <>
-                                {/* 2.1 MAIN AD VIEW */}
-                                <div className={cn("w-full h-full", adView === 'feedback' ? "hidden" : "block")}>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setAdView('feedback'); }}
-                                        aria-label="Close advertisement"
-                                        className="absolute top-0 left-0 w-[22px] h-[22px] bg-white/80 flex items-center justify-center z-[100] rounded-br-[4px] border-none"
-                                    >
-                                        <svg className="w-3.5 h-3.5 fill-[#333]" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
-                                    </button>
 
-                                    <div
-                                        onClick={(e) => { e.stopPropagation(); window.open('https://support.google.com/My-Ad-Center-Help/answer/12155656?url=https://richpredict.com', '_blank'); }}
-                                        className="absolute top-0 right-0 flex items-center bg-white/90 px-1 py-0.5 rounded-bl-[4px] z-[50] group/info"
-                                    >
-                                        <span className="text-[11px] text-[#202124] max-w-0 overflow-hidden whitespace-nowrap transition-all duration-400 group-hover/info:max-w-[100px] group-hover/info:mr-1">Ads by Google</span>
-                                        <svg className="w-3.5 h-3.5 fill-[#4285f4]" viewBox="0 0 15 15">
-                                            <path d="M7.5 1.5a6 6 0 100 12 6 6 0 100-12m0 1a5 5 0 110 10 5 5 0 110-10zM6.625 11h1.75V6.5h-1.75zM7.5 3.75a1 1 0 100 2 1 1 0 100-2z"></path>
-                                        </svg>
-                                    </div>
-
-                                    <div
-                                        onClick={() => {
-                                            try {
-                                                const b64_link = "aHR0cHM6Ly92YXZhZGEuY29tP3V0bV9zb3VyY2U9cmljaHByZWRpY3QuY29tJnV0bV9tZWRpdW09YmFubmVyJnV0bV9jYW1wYWlnbj1nb29nbGVhZHNfc2ltdWxhdG9y";
-                                                window.open(window.atob(b64_link), '_blank');
-                                            } catch (e) {
-                                                window.open('https://vavada.com', '_blank');
-                                            }
-                                        }}
-                                        className="w-full h-full"
-                                    >
-                                        <img
-                                            src={selectedAd.src}
-                                            className="w-full h-full object-cover border-none"
-                                            alt="Ad"
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className={cn("w-full h-full bg-[#f8f9fa] flex-col justify-center items-center text-center", adView === 'feedback' ? "flex" : "hidden")}>
-                                    <button
-                                        onClick={() => setAdView('main')}
-                                        aria-label="Return to advertisement"
-                                        className="absolute top-0 left-0 w-[22px] h-[22px] bg-white/80 flex items-center justify-center z-[100] rounded-br-[4px]"
-                                    >
-                                        <svg className="w-4 h-4 fill-[#333]" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
-                                    </button>
-                                    <div className="text-[18px] text-[#5f6368] mb-2.5">Ads by <b className="font-bold">Google</b></div>
-                                    <div className="flex gap-2.5">
-                                        <button className="bg-[#4285f4] text-white border-none px-4 py-1.5 rounded-[4px] text-[13px] font-medium">Send feedback</button>
-                                        <button
-                                            className="bg-white text-[#5f6368] border border-[#dadce0] px-4 py-1.5 rounded-[4px] text-[13px] flex items-center gap-1.5 font-medium"
-                                            onClick={(e) => { e.stopPropagation(); window.open('https://support.google.com/My-Ad-Center-Help/answer/12155656', '_blank'); }}
-                                        >
-                                            Why this ad?
-                                            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             {/* 3. MAIN HEADER LAYER */}
             <div className="bg-[var(--fs-header)] border-b border-white/5">
