@@ -10,14 +10,12 @@ export async function GET() {
     const lastMod = formatDate(new Date());
 
     try {
+        // Only include active sitemaps that contain valid URLs. Empty sitemaps cause GSC processing errors.
         const sitemaps = [
             'sitemap-static.xml',
             'sitemap-countries.xml',
             'sitemap-news.xml',
-            'sitemap-predictions-football.xml',
-            'sitemap-predictions-tennis.xml',
-            'sitemap-predictions-basketball.xml',
-            'sitemap-predictions-hockey.xml'
+            'sitemap-predictions-football.xml'
         ];
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>

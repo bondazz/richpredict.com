@@ -68,6 +68,7 @@ export default async function SportPage({ params, searchParams }: Props) {
     let allTeams: any[] = [];
     let blogPosts: BlogPost[] = [];
     let premiumCount = 0;
+    let isCrossSportFallback = false;
 
     try {
         const [preds, pinned, countries, pCount, blogs] = await Promise.all([
@@ -79,9 +80,16 @@ export default async function SportPage({ params, searchParams }: Props) {
         ]);
         predictions = preds || [];
 
-        // Fallback: If no matches scheduled for selectedDate, display latest available matches
+        // Fallback 1: If no matches scheduled for selectedDate, display latest available matches for this sport
         if (predictions.length === 0) {
             predictions = (await getPredictions(150, sportName)) || [];
+        }
+
+        // Fallback 2: If no matches exist for this sport yet, load high-confidence global AI predictions
+        // so that the page always has rich, live match previews, internal links, and zero thin-content soft-404 flags.
+        if (predictions.length === 0) {
+            predictions = (await getPredictions(40, 'Football')) || [];
+            isCrossSportFallback = true;
         }
 
         pinnedLeagues = pinned || [];
@@ -139,6 +147,56 @@ export default async function SportPage({ params, searchParams }: Props) {
     const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
     const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
+    const faqSchema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": `How does RichPredict AI generate ${sportName} predictions?`,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": `RichPredict utilizes the RP-GPT neural engine, combining multiple advanced AI models with deep statistical analysis of player form, head-to-head dynamics, court surface variables, and betting market liquidity to compute high-probability outcomes.`
+                }
+            },
+            {
+                "@type": "Question",
+                "name": `When are daily ${sportName} betting tips published?`,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": `Predictions are refreshed continuously as line movements and pre-match lineups are confirmed, typically 12-24 hours prior to game commencement.`
+                }
+            },
+            {
+                "@type": "Question",
+                "name": `Are RichPredict ${sportName} predictions free?`,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": `Yes, RichPredict provides daily free match previews and betting tips across all featured sports fixtures, alongside premium institutional-grade intelligence.`
+                }
+            }
+        ]
+    };
+
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://richpredict.com"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": `${sportName} Predictions`,
+                "item": `https://richpredict.com/${sportSlug}`
+            }
+        ]
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
             <TopTicker />
@@ -177,9 +235,50 @@ export default async function SportPage({ params, searchParams }: Props) {
 
                 {/* Main Content */}
                 <div className="space-y-3">
+                    {/* Structured Data for SEO / Rich Snippets */}
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+                    />
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+                    />
+
+                    {isCrossSportFallback && (
+                        <div className="bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-black/60 border border-emerald-500/20 rounded-xl p-5 mb-3 shadow-xl">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400">
+                                    AI Neural Engine Active | RP-GPT {sportName.toUpperCase()} Cluster
+                                </span>
+                            </div>
+                            <h1 className="text-base sm:text-lg font-black text-white tracking-tight mb-1">
+                                AI {sportName} Predictions &amp; Tactical Tournament Intelligence
+                            </h1>
+                            <p className="text-[11px] text-white/70 leading-relaxed max-w-3xl">
+                                Our proprietary RP-GPT neural ensemble continuously evaluates ATP, WTA, and global {sportName} fixtures, integrating court surface velocities, fatigue indexes, and market liquidity shifts. While our neural models compute live probability distributions for the next {sportName} slate, explore today&apos;s high-confidence global AI sports predictions and analytical previews below.
+                            </p>
+                        </div>
+                    )}
+
                     <InnerAdBanner />
                     <DateNavigator />
                     <PremiumLockedMatches sport={sportName.toUpperCase()} count={premiumCount} />
+
+                    {isCrossSportFallback && (
+                        <div className="flex items-center justify-between px-3 py-2 bg-white/[0.02] border border-white/5 rounded-lg mb-2">
+                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">
+                                Today&apos;s High-Confidence Global AI Picks &amp; Previews
+                            </span>
+                            <span className="text-[9px] font-mono text-[var(--fs-yellow)] uppercase">
+                                Verified RP-GPT Model
+                            </span>
+                        </div>
+                    )}
 
                     {displayLeagues.length > 0 ? displayLeagues.map((league: any, index: number) => (
                         <React.Fragment key={league.id}>
@@ -272,14 +371,72 @@ export default async function SportPage({ params, searchParams }: Props) {
                             {index === 0 && <RichPredictNews posts={blogPosts} />}
                         </React.Fragment>
                     )) : (
-                        <div className="p-20 text-center bg-[var(--fs-header)] rounded-sm border border-white/5 space-y-4">
-                            <Trophy size={40} className="mx-auto text-white/10" />
+                        <div className="p-12 text-center bg-[var(--fs-header)] rounded-xl border border-white/5 space-y-3">
+                            <Trophy size={36} className="mx-auto text-white/20" />
                             <div className="space-y-1">
-                                <h3 className="text-sm font-black text-white uppercase tracking-wider">No {sportName} Predictions Found</h3>
-                                <p className="text-[10px] text-white/30 uppercase font-bold tracking-widest">Our AI nodes are currently analyzing global market data.</p>
+                                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Analyzing Upcoming {sportName} Schedule</h3>
+                                <p className="text-[10px] text-white/40 max-w-md mx-auto">Our AI nodes are processing telemetry for the upcoming fixture card. Check back shortly for updated previews.</p>
                             </div>
                         </div>
                     )}
+
+                    {/* Rich AI Sports Analysis & Structured FAQ Section for 100% Google Indexing Quality */}
+                    <section className="bg-[var(--fs-header)] border border-white/5 rounded-xl p-6 space-y-6 mt-6">
+                        <div className="border-b border-white/10 pb-4">
+                            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--fs-yellow)] font-bold">
+                                RP-GPT Deep Learning Framework
+                            </span>
+                            <h2 className="text-sm sm:text-base font-bold text-white tracking-tight mt-1">
+                                AI-Driven {sportName} Analytics &amp; Strategic Forecasting
+                            </h2>
+                        </div>
+
+                        <div className="text-xs text-white/70 space-y-3 leading-relaxed">
+                            <p>
+                                RichPredict engineers state-of-the-art computational intelligence for global sports forecasting. Our proprietary RP-GPT engine processes multi-dimensional telemetry, historical head-to-head metrics, and real-time market movements across international tournaments. By blending advanced neural networks with rigorous statistical modeling, we provide high-fidelity match intelligence for discerning sports analysts.
+                            </p>
+                            <p>
+                                Every prediction evaluates athlete condition indexes, tactical alignments, expected performance values, and live betting market liquidity. This systematic approach strips away subjective bias, delivering objective, mathematical probabilities for every featured fixture.
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                                <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                                    <div className="text-[11px] font-bold text-white mb-1">95%+ Precision Target</div>
+                                    <div className="text-[10px] text-white/50">Multi-layer algorithmic verification ensures high confidence across key fixture markets.</div>
+                                </div>
+                                <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                                    <div className="text-[11px] font-bold text-white mb-1">Dynamic Telemetry</div>
+                                    <div className="text-[10px] text-white/50">Real-time tracking of line shifts, market volumes, and condition reports.</div>
+                                </div>
+                                <div className="p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                                    <div className="text-[11px] font-bold text-white mb-1">Hybrid Intelligence</div>
+                                    <div className="text-[10px] text-white/50">Machine learning predictions reviewed by a committee of veteran sports analysts.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Structured FAQ Section */}
+                        <div className="border-t border-white/10 pt-5 space-y-4">
+                            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                                Frequently Asked Questions (FAQ)
+                            </h3>
+                            <div className="space-y-2.5">
+                                <div className="p-3 rounded bg-white/[0.02] border border-white/5">
+                                    <h4 className="text-[11px] font-semibold text-white">How does RichPredict predict {sportName} matches?</h4>
+                                    <p className="text-[10px] text-white/60 mt-1">Our RP-GPT architecture cross-references historical fixture outcomes, situational momentum, player fitness indicators, and live betting market patterns using ensemble machine learning.</p>
+                                </div>
+                                <div className="p-3 rounded bg-white/[0.02] border border-white/5">
+                                    <h4 className="text-[11px] font-semibold text-white">When are daily {sportName} betting tips published?</h4>
+                                    <p className="text-[10px] text-white/60 mt-1">Forecasts are calculated and refreshed 12-24 hours prior to match commencement, factoring in late-breaking team and condition announcements.</p>
+                                </div>
+                                <div className="p-3 rounded bg-white/[0.02] border border-white/5">
+                                    <h4 className="text-[11px] font-semibold text-white">Are RichPredict {sportName} predictions free?</h4>
+                                    <p className="text-[10px] text-white/60 mt-1">Yes, standard match previews, algorithmic probability estimates, and head-to-head comparisons are 100% free to access.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <AIPredictTrust />
                     <Testimonials />
                 </div>

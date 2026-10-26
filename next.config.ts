@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     async rewrites() {
         return [
+            { source: '/sitemap.xml', destination: '/sitemaps/index' },
             { source: '/sitemap_index.xml', destination: '/sitemaps/index' },
             { source: '/sitemap-static.xml', destination: '/sitemaps/static' },
             { source: '/sitemap-countries.xml', destination: '/sitemaps/countries' },
