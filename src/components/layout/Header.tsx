@@ -133,6 +133,24 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                         />
                                     )}
                                 </Link>
+                                <Link
+                                    href="/contact"
+                                    className={cn(
+                                        "px-5 flex items-center gap-2 border-r border-white/5 cursor-pointer hover:bg-white/5 transition-colors group relative h-full",
+                                        pathname === "/contact" ? "active-tab" : ""
+                                    )}
+                                >
+                                    <span className={cn("text-[11px] font-medium uppercase transition-colors", pathname === "/contact" ? "text-white" : "text-[var(--fs-text-dim)] group-hover:text-white")}>
+                                        Contact
+                                    </span>
+                                    {pathname === "/contact" && (
+                                        <motion.div
+                                            layoutId="header-active-bar"
+                                            className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--fs-yellow)] shadow-[0_0_15px_rgba(255,221,0,0.3)]"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                    )}
+                                </Link>
                             </div>
                         </nav>
                     </div>

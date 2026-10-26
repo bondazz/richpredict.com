@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Trophy, Star, ChevronDown, ChevronUp } from "lucide-react";
 import SidebarCountries from "@/components/SidebarCountries";
 import { useState } from "react";
+import Link from "next/link";
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -127,10 +128,13 @@ export default function MobileMenu({
                             </div>
 
                             {/* Utility Links */}
-                            <div className="pt-6 border-t border-white/5 space-y-2">
-                                <div className="px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors cursor-pointer">Live Predictions</div>
-                                <div className="px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors cursor-pointer">All Leagues</div>
-                                <div className="px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-yellow)] hover:opacity-80 transition-opacity cursor-pointer">Elite Access</div>
+                            <div className="pt-6 border-t border-white/5 space-y-1">
+                                <Link href="/predictions" onClick={onClose} className="block px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors">Predictions</Link>
+                                <Link href="/news" onClick={onClose} className="block px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors">Sports News</Link>
+                                <Link href="/contact" onClick={onClose} className="block px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors">Contact Support</Link>
+                                <Link href="/faq" onClick={onClose} className="block px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors">FAQ</Link>
+                                <Link href="/privacy" onClick={onClose} className="block px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors">Privacy Policy</Link>
+                                <Link href="/terms" onClick={onClose} className="block px-3 py-2 text-[10px] font-black uppercase text-[var(--fs-text-dim)] hover:text-white transition-colors">Terms of Service</Link>
                             </div>
                         </div>
 

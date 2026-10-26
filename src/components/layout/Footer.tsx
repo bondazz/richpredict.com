@@ -65,8 +65,7 @@ export default function Footer({ footballPredictions = [], tennisPredictions = [
         { label: "Mobile", href: "/mobile" },
         { label: "Live Scores", href: "/" },
         { label: "Recommended Sites", href: "/recommended" },
-        { label: "FAQ", href: "/faq" },
-        { label: "Audio", href: "/audio" }
+        { label: "FAQ", href: "/faq" }
     ];
 
     return (
