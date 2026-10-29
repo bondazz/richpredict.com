@@ -52,10 +52,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
-    const sp = await searchParams;
-    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
-
+export default async function Home() {
     let predictions: Prediction[] = [];
     let pinnedLeagues: any[] = [];
     let allCountries: any[] = [];
@@ -65,19 +62,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 
     try {
         const [preds, pinned, countries, pCount, blogs] = await Promise.all([
-            getPredictions(60, 'Football', selectedDate),
+            getPredictions(40, 'Football'),
             getPinnedLeagues(),
             getCountriesByRegion(true),
             getPremiumPredictionsCount('Football'),
             getBlogPosts(3)
         ]);
         predictions = preds || [];
-
-        // Fallback: If no matches for selectedDate, show latest available matches (capped at 60 to keep HTML < 400KB)
-        if (predictions.length === 0) {
-            predictions = (await getPredictions(60, 'Football')) || [];
-        }
-
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
         premiumCount = pCount || 0;

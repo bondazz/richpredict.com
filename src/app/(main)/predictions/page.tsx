@@ -29,10 +29,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-export default async function PredictionsPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
-    const sp = await searchParams;
-    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
-
+export default async function PredictionsPage() {
     let predictions: Prediction[] = [];
     let pinnedLeagues: any[] = [];
     let allCountries: any[] = [];
@@ -42,18 +39,13 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
 
     try {
         const [preds, pinned, countries, pCount, blogs] = await Promise.all([
-            getPredictions(80, 'Football', selectedDate),
+            getPredictions(50, 'Football'),
             getPinnedLeagues(),
             getCountriesByRegion(true),
             getPremiumPredictionsCount('Football'),
             getBlogPosts(3)
         ]);
         predictions = preds || [];
-
-        if (predictions.length === 0) {
-            predictions = (await getPredictions(80, 'Football')) || [];
-        }
-
         pinnedLeagues = pinned || [];
         allCountries = countries || [];
         premiumCount = pCount || 0;

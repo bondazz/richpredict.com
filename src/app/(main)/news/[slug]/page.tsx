@@ -8,6 +8,10 @@ import { cn, generateSEOSlug } from "@/lib/utils";
 
 export const revalidate = 3600;
 
+export async function generateStaticParams() {
+    return [];
+}
+
 const SPORTS_SLUGS = [
     'football', 'tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball',
     'am. football', 'darts', 'motorsport', 'aussie rules', 'esports', 'netball', 'badminton',

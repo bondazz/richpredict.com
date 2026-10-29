@@ -1,4 +1,9 @@
 export const revalidate = 3600;
+
+export async function generateStaticParams() {
+    return [];
+}
+
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -45,7 +50,6 @@ import { generateSEOSlug, getTeamLogo, slugifyCountry } from "@/lib/utils";
 
 interface Props {
     params: Promise<{ slug: string[] }>;
-    searchParams: Promise<{ date?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -119,10 +123,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default async function UnifiedPredictionsPage({ params, searchParams }: Props) {
+export default async function UnifiedPredictionsPage({ params }: Props) {
     const { slug: slugs } = await params;
-    const sp = await searchParams;
-    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
 
     let country: any = null;
     let match: any = null;
@@ -152,7 +154,7 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
 
         try {
             const [preds, leagues, countries, pCount, blogs] = await Promise.all([
-                getPredictionsByCountry(country.id, 60, selectedDate),
+                getPredictionsByCountry(country.id, 45),
                 getLeaguesByCountry(country.id),
                 getCountriesByRegion(true),
                 getPremiumPredictionsCount(sportName),
@@ -160,14 +162,9 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
             ]);
             predictions = preds || [];
 
-            // Fallback 1: Latest matches for this country across all dates
+            // Fallback: If this country has no matches in DB yet, fallback to featured global predictions so it never renders Soft-404 NO_DATA_DETECTED
             if (predictions.length === 0) {
-                predictions = (await getPredictionsByCountry(country.id, 60)) || [];
-            }
-
-            // Fallback 2: If this country has no matches in DB yet, fallback to featured global predictions so it never renders Soft-404 NO_DATA_DETECTED
-            if (predictions.length === 0) {
-                predictions = (await getPredictions(30, 'Football')) || [];
+                predictions = (await getPredictions(25, 'Football')) || [];
                 isGlobalFallback = true;
             }
 

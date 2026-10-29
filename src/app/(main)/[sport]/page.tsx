@@ -23,10 +23,13 @@ import GameTime from "@/components/predictions/GameTime";
 
 interface Props {
     params: Promise<{ sport: string }>;
-    searchParams: Promise<{ date?: string }>;
 }
 
 const VALID_SPORTS = ['tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball', 'football'];
+
+export async function generateStaticParams() {
+    return VALID_SPORTS.map((sport) => ({ sport }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { sport: sportParam } = await params;
@@ -48,11 +51,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const revalidate = 300;
 
-export default async function SportPage({ params, searchParams }: Props) {
+export default async function SportPage({ params }: Props) {
     const { sport: sportParam } = await params;
-    const sp = await searchParams;
-    const selectedDate = sp.date || new Date().toISOString().split('T')[0];
-
     const sportSlug = sportParam.toLowerCase();
 
     if (!VALID_SPORTS.includes(sportSlug)) {
@@ -71,7 +71,7 @@ export default async function SportPage({ params, searchParams }: Props) {
 
     try {
         const [preds, pinned, countries, pCount, blogs] = await Promise.all([
-            getPredictions(60, sportName, selectedDate),
+            getPredictions(40, sportName),
             getPinnedLeagues(),
             getCountriesByRegion(true),
             getPremiumPredictionsCount(sportName),
@@ -80,11 +80,7 @@ export default async function SportPage({ params, searchParams }: Props) {
         predictions = preds || [];
 
         if (predictions.length === 0) {
-            predictions = (await getPredictions(60, sportName)) || [];
-        }
-
-        if (predictions.length === 0) {
-            predictions = (await getPredictions(30, 'Football')) || [];
+            predictions = (await getPredictions(25, 'Football')) || [];
             isCrossSportFallback = true;
         }
 

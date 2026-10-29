@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function DateNavigator() {
+function DateNavigatorInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -26,7 +26,7 @@ export default function DateNavigator() {
         const formatted = `${year}-${month}-${day}`;
         const params = new URLSearchParams(searchParams.toString());
         params.set('date', formatted);
-        router.push(`?${params.toString()}`, { scroll: false });
+        router.push(`?date=${formatted}`, { scroll: false });
     };
 
     const displayDate = currentSelected.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
@@ -34,7 +34,6 @@ export default function DateNavigator() {
 
     return (
         <div className="w-full h-10 bg-[#02111a] border border-white/5 rounded flex items-center justify-between shadow-lg mb-2 overflow-hidden select-none">
-            {/* Left Button - Yellow arrow for site consistency */}
             <button
                 onClick={() => navigate(-1)}
                 className="w-12 h-full flex items-center justify-center text-[var(--fs-yellow)]/60 hover:text-[var(--fs-yellow)] hover:bg-white/[0.05] transition-all border-r border-white/5 group"
@@ -43,7 +42,6 @@ export default function DateNavigator() {
                 <ChevronLeft size={18} strokeWidth={3} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
 
-            {/* Center Date Info - Clean, no demo text, consistent fonts */}
             <div className="flex items-center gap-2.5 px-4 h-full justify-center">
                 <Calendar size={14} className="text-white/20" strokeWidth={2} />
                 <div className="flex items-center gap-2 font-bold text-white tracking-widest text-[13px] uppercase">
@@ -52,7 +50,6 @@ export default function DateNavigator() {
                 </div>
             </div>
 
-            {/* Right Button - Yellow arrow for site consistency */}
             <button
                 onClick={() => navigate(1)}
                 className="w-12 h-full flex items-center justify-center text-[var(--fs-yellow)]/60 hover:text-[var(--fs-yellow)] hover:bg-white/[0.05] transition-all border-l border-white/5 group"
@@ -61,5 +58,13 @@ export default function DateNavigator() {
                 <ChevronRight size={18} strokeWidth={3} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
         </div>
+    );
+}
+
+export default function DateNavigator() {
+    return (
+        <Suspense fallback={<div className="w-full h-10 bg-[#02111a] border border-white/5 rounded shadow-lg mb-2" />}>
+            <DateNavigatorInner />
+        </Suspense>
     );
 }

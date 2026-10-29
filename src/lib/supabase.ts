@@ -438,14 +438,22 @@ export const getCountriesByRegion = async (onlyActive = true) => {
         ? data.filter((c: any) => Array.isArray(c.leagues) && c.leagues.length > 0)
         : data;
 
-    // Deduplicate by slugified name so no duplicate links ever render
+    // Deduplicate by slugified name and strip heavy nested leagues array from payload
     const seen = new Set<string>();
     const unique: any[] = [];
     for (const c of filtered) {
         const slug = slugifyCountry(c.name);
         if (!slug || seen.has(slug)) continue;
         seen.add(slug);
-        unique.push(c);
+        unique.push({
+            id: c.id,
+            name: c.name,
+            code: c.code,
+            flag_url: c.flag_url,
+            region_id: c.region_id,
+            is_featured: c.is_featured,
+            regions: c.regions,
+        });
     }
 
     return unique;
