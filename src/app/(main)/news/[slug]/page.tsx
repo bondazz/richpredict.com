@@ -74,10 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const post = await getBlogPost(slug);
     if (!post) {
-        return {
-            title: 'Article Not Found',
-            robots: { index: false, follow: false },
-        };
+        notFound();
     }
 
     const url = `https://richpredict.com/news/${slug}`;

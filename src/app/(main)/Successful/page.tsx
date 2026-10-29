@@ -2,6 +2,8 @@ import React from 'react';
 import { CheckCircle2, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import Link from 'next/link';
 
+export const metadata = { title: 'Payment Successful', robots: { index: false, follow: false } };
+
 export default function SuccessPage() {
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4 py-20 bg-[#00141e]">
@@ -58,7 +60,7 @@ export default function SuccessPage() {
                 </div>
 
                 <p className="mt-6 text-[10px] text-white/20 font-bold uppercase tracking-widest">
-                    Transaction ID: RP-{Math.random().toString(36).substring(7).toUpperCase()}
+                    Transaction Status: VERIFIED-VIP-ACTIVE
                 </p>
             </div>
         </div>

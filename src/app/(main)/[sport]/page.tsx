@@ -27,6 +27,8 @@ interface Props {
 
 const VALID_SPORTS = ['tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball', 'football'];
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
     return VALID_SPORTS.map((sport) => ({ sport }));
 }

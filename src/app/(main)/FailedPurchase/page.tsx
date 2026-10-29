@@ -2,6 +2,8 @@ import React from 'react';
 import { XCircle, ArrowRight, RefreshCcw, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 
+export const metadata = { title: 'Payment Failed', robots: { index: false, follow: false } };
+
 export default function FailedPurchasePage() {
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4 py-20 bg-[#00141e]">

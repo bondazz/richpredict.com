@@ -28,6 +28,16 @@ const nextConfig: NextConfig = {
         destination: '/predictions/football/vietnam',
         permanent: true,
       },
+      {
+        source: '/predictions/football/club-friendlyworld',
+        destination: '/predictions/football/world',
+        permanent: true,
+      },
+      {
+        source: '/predictions/football/cymru-southwales',
+        destination: '/predictions/football/wales',
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

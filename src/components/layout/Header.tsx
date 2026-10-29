@@ -44,15 +44,20 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
 
     return (
         <header className="z-50 w-full flex flex-col">
-            {/* 1. TOP UTILITY BAR (Very Thin) */}
-            <div className="bg-[#00141e] border-b border-white/5 py-1 hidden sm:block">
-                <div className="max-w-[1240px] mx-auto w-full px-2 flex justify-between items-center">
-                    <div className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80 select-none pointer-events-none">
+            {/* 1. TOP UTILITY BAR (Visible on all viewports for Mobile-First crawlability) */}
+            <div className="bg-[#00141e] border-b border-white/5 py-1 block">
+                <div className="max-w-[1240px] mx-auto w-full px-2 flex justify-between items-center gap-2">
+                    <div className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80 select-none pointer-events-none truncate">
                         {title || getBannerText()}
                     </div>
-                    <div className="flex gap-4 text-[8px] font-medium text-[var(--fs-text-dim)]">
-                        <span className="hover:text-white cursor-pointer transition-colors">MOBILE APP</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">ADVERTISE</span>
+                    <div className="flex items-center gap-3 sm:gap-4 text-[8px] font-medium text-[var(--fs-text-dim)] shrink-0">
+                        <Link href="/predictions" className="hover:text-white transition-colors lg:hidden">PREDICTIONS</Link>
+                        <Link href="/news" className="hover:text-white transition-colors lg:hidden">NEWS</Link>
+                        <Link href="/vip" className="hover:text-white transition-colors">VIP</Link>
+                        <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
+                        <Link href="/contact" className="hover:text-white transition-colors">CONTACT</Link>
+                        <Link href="/mobile" className="hover:text-white transition-colors hidden sm:inline">MOBILE APP</Link>
+                        <Link href="/advertise" className="hover:text-white transition-colors hidden sm:inline">ADVERTISE</Link>
                     </div>
                 </div>
             </div>

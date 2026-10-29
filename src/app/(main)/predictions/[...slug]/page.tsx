@@ -114,13 +114,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         }
     }
 
-    return {
-        title: "Match Not Found",
-        robots: {
-            index: false,
-            follow: false,
-        },
-    };
+    notFound();
 }
 
 export default async function UnifiedPredictionsPage({ params }: Props) {

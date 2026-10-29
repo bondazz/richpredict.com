@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: 'Advertise',
     description: 'Promote your brand on RichPredict. Reach millions of sports fans with our premium advertising solutions.',
     alternates: {
-        canonical: '/advertise',
+        canonical: 'https://richpredict.com/advertise',
     },
 }
 

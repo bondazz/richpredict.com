@@ -442,6 +442,7 @@ export const getCountriesByRegion = async (onlyActive = true) => {
     const seen = new Set<string>();
     const unique: any[] = [];
     for (const c of filtered) {
+        if (/[a-z][A-Z]/.test(c.name || '')) continue;
         const slug = slugifyCountry(c.name);
         if (!slug || seen.has(slug)) continue;
         seen.add(slug);
@@ -477,6 +478,8 @@ const LEGACY_COUNTRY_SLUGS: Record<string, string> = {
     'liga-futve-aperturavenezuela': 'Venezuela',
     'uefa-youth-league-play-offseurope': 'Europe',
     'v-league-1vietnam': 'Vietnam',
+    'club-friendlyworld': 'World',
+    'cymru-southwales': 'Wales',
     'antigua-barbuda': 'Antigua and Barbuda',
     'australia-oceania': 'Australia and Oceania',
     'north-central-america': 'North and Central America',

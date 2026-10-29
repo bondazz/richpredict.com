@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     title: 'Recommended Sites',
     description: 'A comprehensive directory of premium sports statistics, betting tools, live scores, and fan resources.',
     alternates: {
-        canonical: '/recommended',
+        canonical: 'https://richpredict.com/recommended',
     },
 }
 
@@ -154,9 +154,9 @@ export default function RecommendedSitesPage() {
                 {/* Hero section - Compact */}
                 <div className="relative bg-[#000a0f] border border-white/5 rounded-2xl p-6 md:p-10 overflow-hidden">
                     <div className="relative z-10 max-w-xl">
-                        <h2 className="text-xl md:text-2xl font-black text-white italic tracking-tighter mb-4 uppercase">
+                        <h1 className="text-xl md:text-2xl font-black text-white italic tracking-tighter mb-4 uppercase">
                             Premium <span className="text-[var(--fs-yellow)]">Partners</span> & Resources
-                        </h2>
+                        </h1>
                         <p className="text-[13px] text-white/40 leading-relaxed font-medium">
                             A curated collection of trusted sports platforms and analytical tools. We hand-pick our partners to ensure you have access to the most reliable statistics and insights in the industry.
                         </p>

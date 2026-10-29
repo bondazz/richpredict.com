@@ -27,7 +27,18 @@ export async function GET() {
         { path: '/basketball', priority: '0.7', changefreq: 'daily' },
         { path: '/hockey', priority: '0.7', changefreq: 'daily' },
         { path: '/golf', priority: '0.6', changefreq: 'weekly' },
+        { path: '/baseball', priority: '0.6', changefreq: 'weekly' },
         { path: '/snooker', priority: '0.6', changefreq: 'weekly' },
+        { path: '/volleyball', priority: '0.6', changefreq: 'weekly' },
+        { path: '/contact', priority: '0.7', changefreq: 'monthly' },
+        { path: '/faq', priority: '0.7', changefreq: 'monthly' },
+        { path: '/advertise', priority: '0.6', changefreq: 'monthly' },
+        { path: '/mobile', priority: '0.6', changefreq: 'monthly' },
+        { path: '/recommended', priority: '0.6', changefreq: 'monthly' },
+        { path: '/terms', priority: '0.5', changefreq: 'yearly' },
+        { path: '/privacy', priority: '0.5', changefreq: 'yearly' },
+        { path: '/gdpr', priority: '0.5', changefreq: 'yearly' },
+        { path: '/impressum', priority: '0.5', changefreq: 'yearly' },
     ];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
