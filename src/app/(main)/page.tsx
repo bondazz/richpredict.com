@@ -367,6 +367,45 @@ export default async function Home() {
 
                     <AIPredictTrust />
                     <Testimonials />
+
+                    {/* Platform Directory & Editorial Navigation (Visible on Mobile & Desktop for Crawl Discovery) */}
+                    <section className="bg-[var(--fs-header)] border border-white/5 rounded-xl p-4 space-y-3">
+                        <h2 className="text-xs font-black uppercase tracking-wider text-white">
+                            RichPredict Sports Analytics Directory &amp; Official Pages
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { label: 'All Football Predictions', href: '/predictions' },
+                                { label: 'Sports News & Previews', href: '/news' },
+                                { label: 'VIP Premium Tips', href: '/vip' },
+                                { label: 'Football Hub', href: '/football' },
+                                { label: 'Tennis Predictions', href: '/tennis' },
+                                { label: 'Basketball Tips', href: '/basketball' },
+                                { label: 'Ice Hockey Tips', href: '/hockey' },
+                                { label: 'Golf Predictions', href: '/golf' },
+                                { label: 'Baseball Tips', href: '/baseball' },
+                                { label: 'Snooker Tips', href: '/snooker' },
+                                { label: 'Volleyball Tips', href: '/volleyball' },
+                                { label: 'FAQ & Methodology', href: '/faq' },
+                                { label: 'Contact Support', href: '/contact' },
+                                { label: 'Advertise With Us', href: '/advertise' },
+                                { label: 'Mobile Web App', href: '/mobile' },
+                                { label: 'Recommended Sites', href: '/recommended' },
+                                { label: 'Terms of Use', href: '/terms' },
+                                { label: 'Privacy Policy', href: '/privacy' },
+                                { label: 'GDPR & Journalism', href: '/gdpr' },
+                                { label: 'Impressum', href: '/impressum' },
+                            ].map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className="text-[11px] font-medium text-white/80 hover:text-[var(--fs-yellow)] bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 rounded px-2.5 py-1 transition-colors"
+                                >
+                                    {item.label}
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
                 </div>
 
                 {/* Right Sidebar */}
