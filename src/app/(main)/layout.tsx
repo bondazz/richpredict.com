@@ -1,6 +1,5 @@
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { cn } from '@/lib/utils'
 import { TitleProvider } from '@/context/TitleContext'
 import { getPinnedLeagues, getCountriesByRegion, getPredictions, getBlogPosts } from '@/lib/supabase'
 
@@ -11,7 +10,7 @@ export default async function MainLayout({
 }) {
   const [pinnedLeagues, allCountries, footballPredictions, tennisPredictions, latestNews] = await Promise.all([
     getPinnedLeagues(),
-    getCountriesByRegion(),
+    getCountriesByRegion(true),
     getPredictions(8, 'Football'),
     getPredictions(8, 'Tennis'),
     getBlogPosts(8)
@@ -26,7 +25,7 @@ export default async function MainLayout({
     return acc;
   }, {});
 
-  const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "Australia & Oceania"];
+  const regionOrder = ["Europe", "South America", "World", "Africa", "Asia", "North & Central America", "North and Central America", "Australia & Oceania", "Australia and Oceania", "Other"];
 
   return (
     <TitleProvider>

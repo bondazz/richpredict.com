@@ -1,11 +1,12 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Clock, Calendar, ChevronLeft, User, Newspaper, Trophy, Zap, ArrowRight, ChevronRight } from "lucide-react";
+import { Clock, Calendar, Newspaper, Zap, ChevronRight } from "lucide-react";
 import Link from 'next/link';
-import { supabase, BlogPost, getPredictions } from "@/lib/supabase";
-import InnerAdBanner from "@/components/Ads/InnerAdBanner";
+import { supabase, BlogPost, getPredictions, getBlogPosts } from "@/lib/supabase";
 import SidebarAd from "@/components/Ads/SidebarAd";
-import { cn } from "@/lib/utils";
+import { cn, generateSEOSlug } from "@/lib/utils";
+
+export const revalidate = 3600;
 
 const SPORTS_SLUGS = [
     'football', 'tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball',
@@ -25,7 +26,8 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
         .select('*')
         .eq('slug', slug)
         .eq('published', true)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
     if (error || !data) return null;
     return data as BlogPost;
@@ -36,22 +38,21 @@ async function getMostReadNews(): Promise<BlogPost[]> {
         .from('blog_posts')
         .select('*')
         .eq('published', true)
-        .order('published_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(5);
     return (data as BlogPost[]) || [];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
-    const lowerSlug = decodeURIComponent(slug).toLowerCase();
+    const lowerSlug = decodeURIComponent(slug).toLowerCase().replace(/-/g, ' ');
 
-    // 1. Check if it's a Sport Listing Page
     if (SPORTS_SLUGS.includes(lowerSlug)) {
         const capitalized = lowerSlug.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         const url = `https://richpredict.com/news/${lowerSlug.replace(/ /g, '-')}`;
         return {
-            title: `Latest ${capitalized} News & AI Predictions`,
-            description: `Stay ahead with RICHPREDICT Latest ${capitalized} Sports News. Expert analysis and high-accuracy predictions.`,
+            title: `Latest ${capitalized} News & AI Match Previews`,
+            description: `Stay ahead with RichPredict ${capitalized} sports news, tactical analysis, and high-accuracy AI match predictions.`,
             alternates: { canonical: url },
             robots: {
                 index: true,
@@ -67,9 +68,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    // 2. Otherwise it's an Article Page
     const post = await getBlogPost(slug);
-    if (!post) return { title: 'Post Not Found' };
+    if (!post) {
+        return {
+            title: 'Article Not Found',
+            robots: { index: false, follow: false },
+        };
+    }
 
     const url = `https://richpredict.com/news/${slug}`;
     const authorName = "James Harrison";
@@ -118,22 +123,22 @@ export default async function NewsDynamicPage({ params }: Props) {
             .or(lowerSlug === 'football'
                 ? `category.ilike.%football%,category.ilike.%match preview%`
                 : `category.ilike.%${lowerSlug}%`)
-            .order('published_at', { ascending: false })
+            .order('created_at', { ascending: false })
             .limit(20);
 
-        const news = (newsData as BlogPost[]) || [];
-        const predictions = await getPredictions(10, lowerSlug === 'football' ? 'Football' : 'Tennis');
+        let news = (newsData as BlogPost[]) || [];
+        if (news.length === 0) {
+            news = await getBlogPosts(12);
+        }
 
         const topNews = news[0];
         const subTopNews = news.slice(1, 4);
-        const mostRead = news.slice(4, 9);
-        const moreNews = news.slice(9, 20);
+        const moreNews = news.slice(4, 16);
 
         const popularSports = ['football', 'tennis', 'basketball', 'hockey', 'golf', 'baseball', 'snooker', 'volleyball'];
 
         return (
             <div className="flex flex-col min-h-screen bg-[#00141e] text-white font-sans">
-                {/* News Category Bar */}
                 <div className="bg-[#0b1f27] border-b border-white/5 py-3 overflow-x-auto scrollbar-hide">
                     <div className="max-w-[1240px] mx-auto w-full px-4 flex items-center gap-6 min-w-max">
                         <Link href="/news" className="text-[11px] font-bold uppercase tracking-tight text-white/60 border-transparent hover:text-white pb-1 border-b-2">
@@ -159,9 +164,9 @@ export default async function NewsDynamicPage({ params }: Props) {
                         <section className="bg-[#051a24] rounded-xl overflow-hidden shadow-2xl p-6">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="w-1.5 h-6 bg-red-600 rounded-full" />
-                                <h2 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-white/90 font-outfit">
-                                    Latest {capitalizedSport} News & Predictions
-                                </h2>
+                                <h1 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-white/90 font-outfit">
+                                    Latest {capitalizedSport} News &amp; Match Previews
+                                </h1>
                             </div>
 
                             <h2 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-4 italic flex items-center gap-2">
@@ -189,7 +194,7 @@ export default async function NewsDynamicPage({ params }: Props) {
                                 {subTopNews.map((item) => (
                                     <Link key={item.id} href={`/news/${item.slug}`} className="group space-y-3">
                                         <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-black border border-white/5">
-                                            <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                                            <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title} />
                                             <div className="absolute bottom-0 left-0 p-3 w-full bg-gradient-to-t from-black/80 to-transparent">
                                                 <div className="text-[8px] font-black text-white/60 uppercase tracking-widest flex flex-col font-sans">
                                                     <span className="text-red-500 leading-none mb-1">{capitalizedSport.toUpperCase()}</span>
@@ -214,7 +219,7 @@ export default async function NewsDynamicPage({ params }: Props) {
                                 {moreNews.map((item) => (
                                     <Link key={item.id} href={`/news/${item.slug}`} className="flex gap-4 group cursor-pointer bg-[#051a24] p-3 rounded-xl border border-white/5 hover:bg-white/[0.04] transition-all">
                                         <div className="w-[140px] h-[85px] shrink-0 overflow-hidden rounded-lg relative bg-black">
-                                            <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 font-sans" alt="" />
+                                            <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 font-sans" alt={item.title} />
                                         </div>
                                         <div className="flex flex-col justify-center space-y-1">
                                             <h3 className="text-[14px] font-bold leading-tight group-hover:text-red-500 transition-colors line-clamp-2 italic font-outfit">
@@ -244,7 +249,7 @@ export default async function NewsDynamicPage({ params }: Props) {
     // --- CASE B: ARTICLE DETAIL PAGE ---
     const [post, predictions, mostRead] = await Promise.all([
         getBlogPost(slug),
-        getPredictions(10, 'Football'),
+        getPredictions(8, 'Football'),
         getMostReadNews()
     ]);
 
@@ -291,7 +296,6 @@ export default async function NewsDynamicPage({ params }: Props) {
 
     return (
         <article className="min-h-screen bg-[#00141e] text-white font-sans pb-20">
-            {/* SEO Scripts */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
@@ -299,8 +303,14 @@ export default async function NewsDynamicPage({ params }: Props) {
                         "@context": "https://schema.org",
                         "@type": "BlogPosting",
                         "headline": post.title,
+                        "description": post.meta_description || post.excerpt,
                         "image": post.image_url,
                         "datePublished": post.published_at || post.created_at,
+                        "dateModified": post.updated_at || post.published_at || post.created_at,
+                        "mainEntityOfPage": {
+                            "@type": "WebPage",
+                            "@id": `https://richpredict.com/news/${slug}`
+                        },
                         "author": { "@type": "Person", "name": authorName },
                         "publisher": {
                             "@type": "Organization",
@@ -398,7 +408,7 @@ export default async function NewsDynamicPage({ params }: Props) {
                             {mostRead.map((item) => (
                                 <Link key={item.id} href={`/news/${item.slug}`} className="flex gap-3 group items-start border-b border-white/5 pb-6 last:border-0 last:pb-0">
                                     <div className="w-[100px] h-[60px] shrink-0 overflow-hidden rounded-lg bg-black">
-                                        <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                                        <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={item.title} />
                                     </div>
                                     <h4 className="text-[12px] font-black leading-tight group-hover:underline group-hover:text-white transition-all text-white/70 italic line-clamp-3 font-outfit">
                                         {item.title}
@@ -407,6 +417,29 @@ export default async function NewsDynamicPage({ params }: Props) {
                             ))}
                         </div>
                     </div>
+
+                    {predictions.length > 0 && (
+                        <div className="space-y-4 bg-[#051a24] p-5 rounded-xl border border-white/5 shadow-xl">
+                            <h3 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] italic flex items-center gap-2 font-outfit">
+                                <Zap size={14} className="text-[var(--fs-yellow)] fill-[var(--fs-yellow)]" /> Featured Match Previews
+                            </h3>
+                            <div className="space-y-2.5">
+                                {predictions.map((p) => {
+                                    const mSlug = generateSEOSlug(p.home_team, p.away_team, p.slug);
+                                    return (
+                                        <Link
+                                            key={p.id}
+                                            href={`/predictions/${mSlug}`}
+                                            className="flex items-center justify-between text-[11px] font-bold text-white/80 hover:text-[var(--fs-yellow)] transition-colors py-1 border-b border-white/5 last:border-0"
+                                        >
+                                            <span className="truncate pr-2">{p.home_team} vs {p.away_team}</span>
+                                            <span className="text-[10px] font-mono text-[var(--fs-yellow)] shrink-0">{p.confidence || '75%'}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </aside>
             </main>
         </article>

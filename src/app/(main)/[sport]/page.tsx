@@ -1,9 +1,9 @@
 import React from 'react';
 import { Metadata } from 'next';
 import Link from "next/link";
-import { Zap, Trophy, Loader2, Star, ArrowRight, ChevronDown } from "lucide-react";
-import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
-import { getPredictions, getRegions, getPinnedLeagues, getCountriesByRegion, getPremiumPredictionsCount, Prediction, getTeams, getBlogPosts, BlogPost, getTeamsByNames } from "@/lib/supabase";
+import { Trophy } from "lucide-react";
+import { generateSEOSlug, getTeamLogo, slugifyCountry } from "@/lib/utils";
+import { getPredictions, getPinnedLeagues, getCountriesByRegion, getPremiumPredictionsCount, Prediction, getBlogPosts, BlogPost, getTeamsByNames } from "@/lib/supabase";
 
 import { AIPredictTrust } from "@/components/AIPredictTrust";
 import { Testimonials } from "@/components/Testimonials";
@@ -38,15 +38,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const sport = sportSlug.charAt(0).toUpperCase() + sportSlug.slice(1);
     return {
-        title: `AI ${sport} Predictions & Betting Tips`,
-        description: `Get the most accurate AI-powered ${sport} predictions, analytics, and betting tips. High-probability outcomes for all major ${sport} events.`,
+        title: `AI ${sport} Predictions, Match Previews & Betting Tips`,
+        description: `Get accurate AI-powered ${sport} predictions, mathematical match analytics, and expert betting tips for major international ${sport.toLowerCase()} tournaments.`,
         alternates: {
             canonical: `https://richpredict.com/${sportSlug}`,
         },
     };
 }
 
-export const revalidate = 0;
+export const revalidate = 300;
 
 export default async function SportPage({ params, searchParams }: Props) {
     const { sport: sportParam } = await params;
@@ -55,7 +55,6 @@ export default async function SportPage({ params, searchParams }: Props) {
 
     const sportSlug = sportParam.toLowerCase();
 
-    // Validate sport - Return true HTTP 404 if invalid
     if (!VALID_SPORTS.includes(sportSlug)) {
         notFound();
     }
@@ -72,23 +71,20 @@ export default async function SportPage({ params, searchParams }: Props) {
 
     try {
         const [preds, pinned, countries, pCount, blogs] = await Promise.all([
-            getPredictions(150, sportName, selectedDate),
+            getPredictions(60, sportName, selectedDate),
             getPinnedLeagues(),
-            getCountriesByRegion(),
+            getCountriesByRegion(true),
             getPremiumPredictionsCount(sportName),
             getBlogPosts(3)
         ]);
         predictions = preds || [];
 
-        // Fallback 1: If no matches scheduled for selectedDate, display latest available matches for this sport
         if (predictions.length === 0) {
-            predictions = (await getPredictions(150, sportName)) || [];
+            predictions = (await getPredictions(60, sportName)) || [];
         }
 
-        // Fallback 2: If no matches exist for this sport yet, load high-confidence global AI predictions
-        // so that the page always has rich, live match previews, internal links, and zero thin-content soft-404 flags.
         if (predictions.length === 0) {
-            predictions = (await getPredictions(40, 'Football')) || [];
+            predictions = (await getPredictions(30, 'Football')) || [];
             isCrossSportFallback = true;
         }
 
@@ -97,14 +93,12 @@ export default async function SportPage({ params, searchParams }: Props) {
         premiumCount = pCount || 0;
         blogPosts = blogs || [];
 
-        // Fetch only relevant team logos
         const relevantTeamNames = Array.from(new Set(predictions.flatMap(p => [p.home_team, p.away_team])));
         allTeams = await getTeamsByNames(relevantTeamNames);
     } catch (e: any) {
         console.error("Supabase connection error:", e);
     }
 
-    // Build dynamic logo map from database teams
     const dbLogoMap: Record<string, string> = {};
     allTeams.forEach(team => {
         if (team.name && team.logo_url) {
@@ -115,7 +109,6 @@ export default async function SportPage({ params, searchParams }: Props) {
         }
     });
 
-    // Group predictions by league + country
     const groupedLeagues = predictions.reduce((acc: any, p: Prediction) => {
         const countryId = p.leagues?.country_id || 'world';
         const leagueId = p.league_id || p.league || 'other';
@@ -135,7 +128,6 @@ export default async function SportPage({ params, searchParams }: Props) {
 
     const displayLeagues = Object.values(groupedLeagues);
 
-    // Group countries by region
     const countriesByRegion = allCountries.reduce((acc: any, country: any) => {
         const regionObj = country.regions || country.region;
         const regionName = regionObj?.name || "Other";
@@ -144,7 +136,7 @@ export default async function SportPage({ params, searchParams }: Props) {
         return acc;
     }, {});
 
-    const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
+    const regionOrder = ["Europe", "World", "South America", "North & Central America", "North and Central America", "Asia", "Africa", "Australia & Oceania", "Australia and Oceania", "Other"];
     const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
     const faqSchema = {
@@ -156,7 +148,7 @@ export default async function SportPage({ params, searchParams }: Props) {
                 "name": `How does RichPredict AI generate ${sportName} predictions?`,
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": `RichPredict utilizes the RP-GPT neural engine, combining multiple advanced AI models with deep statistical analysis of player form, head-to-head dynamics, court surface variables, and betting market liquidity to compute high-probability outcomes.`
+                    "text": `RichPredict utilizes the RP-GPT neural engine, combining multiple advanced AI models with deep statistical analysis of player form, head-to-head dynamics, surface variables, and betting market liquidity to compute high-probability outcomes.`
                 }
             },
             {
@@ -206,23 +198,27 @@ export default async function SportPage({ params, searchParams }: Props) {
                 {/* Left Sidebar */}
                 <aside className="hidden lg:flex flex-col space-y-1 pr-2">
                     <div className="text-[10px] font-black text-white uppercase tracking-wider px-2 mb-1">Pinned Leagues</div>
-                    {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => (
-                        <div
-                            key={i}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
-                            title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
-                        >
-                            <Flag
-                                code={league.countries?.code}
-                                url={league.countries?.flag_url}
-                                name={league.countries?.name}
-                                className="w-3.5 h-2.5"
-                            />
-                            <span className="text-[11px] font-medium truncate transition-colors">
-                                {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
-                            </span>
-                        </div>
-                    )) : (
+                    {pinnedLeagues.length > 0 ? pinnedLeagues.map((league: any, i) => {
+                        const countrySlug = slugifyCountry(league.countries?.name || 'europe');
+                        return (
+                            <Link
+                                key={i}
+                                href={`/predictions/football/${countrySlug}`}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
+                                title={`${league.countries?.name?.toUpperCase()}: ${league.name}`}
+                            >
+                                <Flag
+                                    code={league.countries?.code}
+                                    url={league.countries?.flag_url}
+                                    name={league.countries?.name}
+                                    className="w-3.5 h-2.5"
+                                />
+                                <span className="text-[11px] font-medium truncate transition-colors">
+                                    {league.name.replace(new RegExp(`(${league.countries?.name}|EUR|WORLD|SOUTH AFRICA|BRAZIL|WALES|VENEZUELA|VIETNAM)$`, 'i'), '').trim()}
+                                </span>
+                            </Link>
+                        );
+                    }) : (
                         <div className="px-2 py-1 text-[9px] text-white/20 italic">No pinned data</div>
                     )}
 
@@ -235,7 +231,6 @@ export default async function SportPage({ params, searchParams }: Props) {
 
                 {/* Main Content */}
                 <div className="space-y-3">
-                    {/* Structured Data for SEO / Rich Snippets */}
                     <script
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -245,25 +240,26 @@ export default async function SportPage({ params, searchParams }: Props) {
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
                     />
 
-                    {isCrossSportFallback && (
-                        <div className="bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-black/60 border border-emerald-500/20 rounded-xl p-5 mb-3 shadow-xl">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400">
-                                    AI Neural Engine Active | RP-GPT {sportName.toUpperCase()} Cluster
-                                </span>
-                            </div>
-                            <h1 className="text-base sm:text-lg font-black text-white tracking-tight mb-1">
-                                AI {sportName} Predictions &amp; Tactical Tournament Intelligence
-                            </h1>
-                            <p className="text-[11px] text-white/70 leading-relaxed max-w-3xl">
-                                Our proprietary RP-GPT neural ensemble continuously evaluates ATP, WTA, and global {sportName} fixtures, integrating court surface velocities, fatigue indexes, and market liquidity shifts. While our neural models compute live probability distributions for the next {sportName} slate, explore today&apos;s high-confidence global AI sports predictions and analytical previews below.
-                            </p>
+                    {/* Always Render Visible Primary H1 for Every Sport Page */}
+                    <div className="bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-black/60 border border-emerald-500/20 rounded-xl p-5 mb-3 shadow-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400">
+                                AI Neural Engine Active | RP-GPT {sportName.toUpperCase()} Cluster
+                            </span>
                         </div>
-                    )}
+                        <h1 className="text-base sm:text-lg font-black text-white tracking-tight mb-1">
+                            AI {sportName} Predictions, Match Previews &amp; Betting Tips
+                        </h1>
+                        <p className="text-[11px] text-white/70 leading-relaxed max-w-3xl">
+                            {isCrossSportFallback
+                                ? `Our proprietary RP-GPT neural ensemble continuously evaluates international ${sportName.toLowerCase()} tournaments, integrating surface velocities, fatigue indexes, and market liquidity shifts. While our neural models compute live probability distributions for the next ${sportName.toLowerCase()} slate, explore today's high-confidence global AI sports predictions and analytical previews below.`
+                                : `Mathematical ${sportName.toLowerCase()} predictions, expected goal (xG) modeling, and tactical betting tips across major domestic and international ${sportName.toLowerCase()} competitions.`}
+                        </p>
+                    </div>
 
                     <InnerAdBanner />
                     <DateNavigator />
@@ -272,7 +268,7 @@ export default async function SportPage({ params, searchParams }: Props) {
                     {isCrossSportFallback && (
                         <div className="flex items-center justify-between px-3 py-2 bg-white/[0.02] border border-white/5 rounded-lg mb-2">
                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">
-                                Today&apos;s High-Confidence Global AI Picks &amp; Previews
+                                Featured High-Confidence Global AI Picks &amp; Previews
                             </span>
                             <span className="text-[9px] font-mono text-[var(--fs-yellow)] uppercase">
                                 Verified RP-GPT Model
@@ -280,97 +276,105 @@ export default async function SportPage({ params, searchParams }: Props) {
                         </div>
                     )}
 
-                    {displayLeagues.length > 0 ? displayLeagues.map((league: any, index: number) => (
-                        <React.Fragment key={league.id}>
-                            <div className="sportName soccer overflow-hidden rounded-xl border border-white/5 shadow-2xl">
-                                <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
-                                    <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="headerLeague__body flex items-center gap-2">
-                                                {league.matches[0]?.leagues?.countries?.flag_url && (
-                                                    <img
-                                                        className="w-[18px] h-[12px] object-cover rounded-[1px] shadow-sm pointer-events-none select-none"
-                                                        src={league.matches[0].leagues.countries.flag_url}
-                                                        alt={`${league.matches[0].leagues.countries.name} flag`}
-                                                        loading="lazy"
-                                                    />
-                                                )}
-                                                <div className="headerLeague__titleWrapper flex flex-col md:flex-row md:items-center">
-                                                    <div className="headerLeague__meta flex items-center">
-                                                        {league.matches[0]?.leagues?.countries?.name && (
-                                                            <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__category uppercase mr-1.5">{league.matches[0].leagues.countries.name}:&nbsp;</span>
-                                                        )}
+                    {displayLeagues.length > 0 ? displayLeagues.map((league: any, index: number) => {
+                        const leagueCountryName = league.matches[0]?.leagues?.countries?.name;
+                        const leagueCountrySlug = leagueCountryName ? slugifyCountry(leagueCountryName) : '';
+
+                        return (
+                            <React.Fragment key={league.id}>
+                                <div className="sportName soccer overflow-hidden rounded-xl border border-white/5 shadow-2xl">
+                                    <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
+                                        <div className="wcl-header_HrElx py-2.5 px-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="headerLeague__body flex items-center gap-2">
+                                                    {league.matches[0]?.leagues?.countries?.flag_url && (
+                                                        <img
+                                                            className="w-[18px] h-[12px] object-cover rounded-[1px] shadow-sm pointer-events-none select-none"
+                                                            src={league.matches[0].leagues.countries.flag_url}
+                                                            alt={`${leagueCountryName} flag`}
+                                                            loading="lazy"
+                                                        />
+                                                    )}
+                                                    <div className="headerLeague__titleWrapper flex flex-col md:flex-row md:items-center">
+                                                        <div className="headerLeague__meta flex items-center">
+                                                            {leagueCountryName && (
+                                                                <Link
+                                                                    href={`/predictions/football/${leagueCountrySlug}`}
+                                                                    className="text-[10px] font-bold text-white hover:text-[var(--fs-yellow)] tracking-tight leading-none drop-shadow-md headerLeague__category uppercase mr-1.5 transition-colors"
+                                                                >
+                                                                    {leagueCountryName}:&nbsp;
+                                                                </Link>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__title">
+                                                            {league.name}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-white tracking-tight leading-none drop-shadow-md headerLeague__title">
-                                                        {league.name}
-                                                    </span>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[9px] font-black text-[var(--fs-yellow)] drop-shadow-sm uppercase tracking-[0.1em] italic">
-                                                {(league.category || sportName).toLowerCase().charAt(0).toUpperCase() + (league.category || sportName).toLowerCase().slice(1)} tips
-                                            </span>
-                                            <div className="w-4 h-4 flex items-center justify-center text-white/40">
-                                                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[9px] font-black text-[var(--fs-yellow)] drop-shadow-sm uppercase tracking-[0.1em] italic">
+                                                    {(league.category || sportName).toLowerCase().charAt(0).toUpperCase() + (league.category || sportName).toLowerCase().slice(1)} tips
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="event__content bg-[var(--fs-header)] divide-y divide-white/5">
-                                    {league.matches.map((match: Prediction) => (
-                                        <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
-                                            <GameTime
-                                                date={match.match_date}
-                                                time={match.match_time || "19:00"}
-                                                className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5 ml-2"
-                                            />
-
-                                            <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
-                                                <div className="flex items-center gap-2 sm:gap-2.5">
-                                                    <img
-                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
-                                                        src={getLogo(match.home_team)}
-                                                        alt={match.home_team}
-                                                        loading="lazy"
+                                    <div className="event__content bg-[var(--fs-header)] divide-y divide-white/5">
+                                        {league.matches.map((match: Prediction) => {
+                                            const matchSeoSlug = generateSEOSlug(match.home_team, match.away_team, match.slug);
+                                            return (
+                                                <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
+                                                    <GameTime
+                                                        date={match.match_date}
+                                                        time={match.match_time || "19:00"}
+                                                        className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5 ml-2"
                                                     />
-                                                    <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 sm:gap-2.5">
-                                                    <img
-                                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
-                                                        src={getLogo(match.away_team)}
-                                                        alt={match.away_team}
-                                                        loading="lazy"
+
+                                                    <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
+                                                        <div className="flex items-center gap-2 sm:gap-2.5">
+                                                            <img
+                                                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                                src={getLogo(match.home_team)}
+                                                                alt={match.home_team}
+                                                                loading="lazy"
+                                                            />
+                                                            <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 sm:gap-2.5">
+                                                            <img
+                                                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                                src={getLogo(match.away_team)}
+                                                                alt={match.away_team}
+                                                                loading="lazy"
+                                                            />
+                                                            <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
+                                                        <Link
+                                                            href={`/predictions/${matchSeoSlug}`}
+                                                            className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
+                                                        >
+                                                            Match Preview
+                                                        </Link>
+                                                    </div>
+
+                                                    <Link
+                                                        href={`/predictions/${matchSeoSlug}`}
+                                                        className="absolute inset-0 z-0"
+                                                        aria-label={`View match preview for ${match.home_team} vs ${match.away_team}`}
                                                     />
-                                                    <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
                                                 </div>
-                                            </div>
-
-                                            <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
-                                                <Link
-                                                    href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                    className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
-                                                >
-                                                    Match Preview
-                                                </Link>
-                                            </div>
-
-                                            <Link
-                                                href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                className="absolute inset-0 z-0"
-                                                aria-label={`View match preview for ${match.home_team} vs ${match.away_team}`}
-                                            />
-                                        </div>
-                                    ))}
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                            {index === 0 && <RichPredictNews posts={blogPosts} />}
-                        </React.Fragment>
-                    )) : (
+                                {index === 0 && <RichPredictNews posts={blogPosts} />}
+                            </React.Fragment>
+                        );
+                    }) : (
                         <div className="p-12 text-center bg-[var(--fs-header)] rounded-xl border border-white/5 space-y-3">
                             <Trophy size={36} className="mx-auto text-white/20" />
                             <div className="space-y-1">
@@ -380,7 +384,7 @@ export default async function SportPage({ params, searchParams }: Props) {
                         </div>
                     )}
 
-                    {/* Rich AI Sports Analysis & Structured FAQ Section for 100% Google Indexing Quality */}
+                    {/* Rich AI Sports Analysis & Structured FAQ Section */}
                     <section className="bg-[var(--fs-header)] border border-white/5 rounded-xl p-6 space-y-6 mt-6">
                         <div className="border-b border-white/10 pb-4">
                             <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--fs-yellow)] font-bold">
@@ -393,10 +397,10 @@ export default async function SportPage({ params, searchParams }: Props) {
 
                         <div className="text-xs text-white/70 space-y-3 leading-relaxed">
                             <p>
-                                RichPredict engineers state-of-the-art computational intelligence for global sports forecasting. Our proprietary RP-GPT engine processes multi-dimensional telemetry, historical head-to-head metrics, and real-time market movements across international tournaments. By blending advanced neural networks with rigorous statistical modeling, we provide high-fidelity match intelligence for discerning sports analysts.
+                                RichPredict engineers state-of-the-art computational intelligence for global {sportName.toLowerCase()} forecasting. Our proprietary RP-GPT engine processes multi-dimensional telemetry, historical head-to-head metrics, and real-time market movements across international tournaments. By blending advanced neural networks with rigorous statistical modeling, we provide high-fidelity match intelligence for discerning sports analysts.
                             </p>
                             <p>
-                                Every prediction evaluates athlete condition indexes, tactical alignments, expected performance values, and live betting market liquidity. This systematic approach strips away subjective bias, delivering objective, mathematical probabilities for every featured fixture.
+                                Every {sportName.toLowerCase()} prediction evaluates athlete condition indexes, tactical alignments, expected performance values, and live betting market liquidity. This systematic approach strips away subjective bias, delivering objective, mathematical probabilities for every featured fixture.
                             </p>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
@@ -415,7 +419,6 @@ export default async function SportPage({ params, searchParams }: Props) {
                             </div>
                         </div>
 
-                        {/* Structured FAQ Section */}
                         <div className="border-t border-white/10 pt-5 space-y-4">
                             <h3 className="text-xs font-bold text-white uppercase tracking-wider">
                                 Frequently Asked Questions (FAQ)

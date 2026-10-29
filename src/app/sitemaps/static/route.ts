@@ -1,46 +1,49 @@
 import { NextResponse } from 'next/server';
-export const dynamic = 'force-dynamic';
+import { supabase } from '@/lib/supabase';
 
+export const revalidate = 86400;
 
 export async function GET() {
     const baseUrl = 'https://richpredict.com';
-    const now = new Date().toISOString().split('.')[0] + '+00:00';
+
+    const { data: latestPred } = await supabase
+        .from('predictions')
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    const lastMod = latestPred?.created_at
+        ? new Date(latestPred.created_at).toISOString()
+        : '2026-06-02T07:36:14.000Z';
 
     const routes = [
-        { url: '/', priority: '1.0', changefreq: 'daily' },
-        { url: '/predictions', priority: '0.9', changefreq: 'daily' },
-        { url: '/news', priority: '0.9', changefreq: 'daily' },
-        { url: '/football', priority: '0.9', changefreq: 'daily' },
-        { url: '/tennis', priority: '0.8', changefreq: 'daily' },
-        { url: '/basketball', priority: '0.8', changefreq: 'daily' },
-        { url: '/hockey', priority: '0.8', changefreq: 'daily' },
-        { url: '/golf', priority: '0.8', changefreq: 'daily' },
-        { url: '/contact', priority: '0.7', changefreq: 'monthly' },
-        { url: '/privacy', priority: '0.6', changefreq: 'monthly' },
-        { url: '/terms', priority: '0.6', changefreq: 'monthly' },
-        { url: '/faq', priority: '0.7', changefreq: 'weekly' },
-        { url: '/gdpr', priority: '0.6', changefreq: 'monthly' },
-        { url: '/impressum', priority: '0.6', changefreq: 'monthly' },
-        { url: '/mobile', priority: '0.7', changefreq: 'monthly' },
-        { url: '/recommended', priority: '0.6', changefreq: 'weekly' },
-        { url: '/advertise', priority: '0.5', changefreq: 'monthly' },
+        { path: '', priority: '1.0', changefreq: 'daily' },
+        { path: '/predictions', priority: '0.9', changefreq: 'daily' },
+        { path: '/news', priority: '0.9', changefreq: 'daily' },
+        { path: '/vip', priority: '0.8', changefreq: 'weekly' },
+        { path: '/football', priority: '0.8', changefreq: 'daily' },
+        { path: '/tennis', priority: '0.7', changefreq: 'daily' },
+        { path: '/basketball', priority: '0.7', changefreq: 'daily' },
+        { path: '/hockey', priority: '0.7', changefreq: 'daily' },
+        { path: '/golf', priority: '0.6', changefreq: 'weekly' },
+        { path: '/snooker', priority: '0.6', changefreq: 'weekly' },
     ];
 
-    const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${routes.map(r => `
-    <url>
-        <loc>${baseUrl}${r.url}</loc>
-        <lastmod>${now}</lastmod>
-        <changefreq>${r.changefreq}</changefreq>
-        <priority>${r.priority}</priority>
-    </url>`).join('')}
+${routes.map(route => `  <url>
+    <loc>${baseUrl}${route.path}</loc>
+    <lastmod>${lastMod}</lastmod>
+    <changefreq>${route.changefreq}</changefreq>
+    <priority>${route.priority}</priority>
+  </url>`).join('\n')}
 </urlset>`;
 
-    return new NextResponse(sitemapXML, {
+    return new NextResponse(xml, {
         headers: {
-            'Content-Type': 'application/xml',
-            'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=86400',
-        }
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+        },
     });
 }

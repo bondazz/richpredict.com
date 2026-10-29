@@ -5,13 +5,31 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function generateSEOSlug(home: string, away: string, originalSlug: string) {
+export function slugifyCountry(name: string): string {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+export function generateSEOSlug(home: string, away: string, originalSlug?: string) {
     // Format: [home]-vs-[away]-predictions-betting-tips-match-previews-[original-suffix]
-    const clean = (str: string) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const clean = (str: string) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    if (!originalSlug) {
+        return `${clean(home)}-vs-${clean(away)}-predictions-betting-tips-match-previews`;
+    }
+
+    // If originalSlug already contains predictions-betting-tips-match-previews, return it as-is
+    if (originalSlug.includes('-predictions-betting-tips-match-previews-')) {
+        return originalSlug;
+    }
 
     // If slug contains a date like 2026-02-21, keep the whole date
     const parts = originalSlug.split('-');
-    let suffix = parts.pop();
+    let suffix = parts.pop() || '';
 
     // Check if we should take more parts (for YYYY-MM-DD format)
     if (parts.length >= 2 && parts[parts.length - 1].length === 2 && parts[parts.length - 2].startsWith('20')) {
@@ -29,13 +47,12 @@ export function extractMatchSuffix(slug: string) {
 }
 
 export function getTeamLogo(name: string, dbLogoMap: Record<string, string>) {
-    const normalized = name.toLowerCase().trim();
+    const normalized = (name || '').toLowerCase().trim();
 
     // 1. Exact match - O(1)
     if (dbLogoMap[normalized]) return dbLogoMap[normalized];
 
-    // 2. Optimized fuzzy match: Only do this if the map is relatively small 
-    // or use a more targeted approach. For now, let's keep it simple to avoid hangs.
+    // 2. Optimized fuzzy match
     const cleanNormalized = normalized.replace(/\s(fc|utd|united|city|rovers)$/i, '');
     if (dbLogoMap[cleanNormalized]) return dbLogoMap[cleanNormalized];
 
@@ -61,5 +78,5 @@ export function getTeamLogo(name: string, dbLogoMap: Record<string, string>) {
         }
     }
 
-    return `https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=001e28&textColor=ffe438`;
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name || 'Team')}&backgroundColor=001e28&textColor=ffe438`;
 }

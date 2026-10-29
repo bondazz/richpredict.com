@@ -1,91 +1,99 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { generateSEOSlug } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
-function escapeXml(unsafe: string) {
-    if (!unsafe) return '';
-    return unsafe.replace(/[<>&'"]/g, (c) => {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case '\'': return '&apos;';
-            case '"': return '&quot;';
-            default: return '';
-        }
-    });
+export async function generateStaticParams() {
+    return [
+        { sport: 'football' },
+    ];
 }
 
-function formatDate(date: string) {
-    return new Date(date).toISOString().split('.')[0] + '+00:00';
+function escapeXml(unsafe: string): string {
+    return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
 }
 
-export async function GET(req: Request, context: { params: Promise<{ sport: string }> }) {
-    const params = await context.params;
-    const sport = params?.sport?.toLowerCase();
-
-    if (!sport) return new NextResponse('Sport required', { status: 400 });
-
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ sport: string }> }
+) {
     const baseUrl = 'https://richpredict.com';
+    const { sport } = await params;
 
-    try {
-        let allMatches: any[] = [];
-        const CHUNK_SIZE = 1000;
-        const MAX_LIMIT = 50000;
+    // Fetch total count first so we can run all chunks in parallel
+    let countQuery = supabase
+        .from('predictions')
+        .select('*', { count: 'exact', head: true });
 
-        for (let i = 0; i < MAX_LIMIT; i += CHUNK_SIZE) {
-            let query = supabaseAdmin
-                .from('predictions')
-                .select('home_team, away_team, slug, created_at, category')
-                .order('created_at', { ascending: false })
-                .range(i, i + CHUNK_SIZE - 1);
+    if (sport.toLowerCase() === 'football') {
+        countQuery = countQuery.or('category.ilike.Football,category.is.null');
+    } else {
+        countQuery = countQuery.ilike('category', sport);
+    }
 
-            if (sport === 'football') {
-                query = query.or('category.ilike.football,category.is.null');
-            } else {
-                query = query.ilike('category', sport);
-            }
+    const { count } = await countQuery;
+    const totalCount = Math.min(count || 10000, 15000);
+    const pageSize = 1000;
+    const numPages = Math.ceil(totalCount / pageSize);
 
-            const { data, error } = await query;
-            if (error) throw error;
-            if (!data || data.length === 0) break;
+    const chunkPromises = Array.from({ length: numPages }, (_, page) => {
+        let query = supabase
+            .from('predictions')
+            .select('slug, home_team, away_team, created_at, match_date')
+            .order('match_date', { ascending: false })
+            .order('id', { ascending: true })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
 
-            allMatches = [...allMatches, ...data];
-
-            // If we got fewer than CHUNK_SIZE, we've reached the end
-            if (data.length < CHUNK_SIZE) break;
+        if (sport.toLowerCase() === 'football') {
+            query = query.or('category.ilike.Football,category.is.null');
+        } else {
+            query = query.ilike('category', sport);
         }
+        return query;
+    });
 
-        const matches = allMatches;
+    const results = await Promise.all(chunkPromises);
+    const allPredictions = results.flatMap(r => r.data || []);
 
-        const urlEntries = (matches || []).map(match => {
-            const date = formatDate(match.created_at || new Date().toISOString());
-            const finalSlug = generateSEOSlug(match.home_team, match.away_team, match.slug || '');
-            return `  <url>
-    <loc>${baseUrl}/predictions/${escapeXml(finalSlug)}</loc>
-    <lastmod>${date}</lastmod>
+    const seenUrls = new Set<string>();
+    const urlEntries: string[] = [];
+
+    for (const p of allPredictions) {
+        if (!p.home_team || !p.away_team) continue;
+        const finalSlug = generateSEOSlug(p.home_team, p.away_team, p.slug);
+        if (!finalSlug) continue;
+
+        const loc = `${baseUrl}/predictions/${finalSlug}`;
+        if (seenUrls.has(loc)) continue;
+        seenUrls.add(loc);
+
+        const lastMod = p.created_at
+            ? new Date(p.created_at).toISOString()
+            : (p.match_date ? `${p.match_date}T00:00:00.000Z` : '2026-06-02T00:00:00.000Z');
+
+        urlEntries.push(`  <url>
+    <loc>${escapeXml(loc)}</loc>
+    <lastmod>${lastMod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
-  </url>`;
-        }).join('\n');
-
-        const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urlEntries}
-</urlset>`.trim();
-
-        return new NextResponse(sitemapXML, {
-            headers: {
-                'Content-Type': 'application/xml; charset=utf-8',
-                'X-Content-Type-Options': 'nosniff',
-                'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
-            }
-        });
-
-    } catch (e) {
-        console.error('Predictions Sitemap Error:', e);
-        return new NextResponse(`Error`, { status: 500 });
+  </url>`);
     }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries.join('\n')}
+</urlset>`;
+
+    return new NextResponse(xml, {
+        headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+        },
+    });
 }

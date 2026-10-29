@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Trophy, Search, Menu, Newspaper, ChevronDown, User } from "lucide-react";
+import { Search, Menu, Newspaper, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileMenu from "@/components/layout/MobileMenu";
-import { motion } from "framer-motion"; // Added framer-motion import
-
+import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-
 import { useTitle } from "@/context/TitleContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -28,14 +26,13 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
     const isNewsActive = pathname.startsWith("/news");
     const isScoresActive = !isNewsActive && !pathname.startsWith("/admin");
 
-    const getH1Text = () => {
+    const getBannerText = () => {
         if (pathname === "/") return "Football Predictions, Results, EPL & Champions League";
         if (pathname === "/recommended") return "Premium Partners & Resources";
         if (pathname.startsWith("/news")) return "Sports news, interviews, highlights, rumours, scores and statistics";
         if (pathname.startsWith("/predictions")) return "Football Predictions & Match Analytics";
 
-        // Handle sports paths like /tennis, /basketball etc.
-        const sportName = pathname.substring(1); // Get name from /name
+        const sportName = pathname.substring(1);
         const validSports = ["football", "tennis", "basketball", "hockey", "golf", "baseball", "snooker", "volleyball"];
         if (validSports.includes(sportName)) {
             const capitalized = sportName.charAt(0).toUpperCase() + sportName.slice(1);
@@ -45,27 +42,20 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
         return "Football Predictions, Results, EPL & Champions League";
     };
 
-    const allSports = ["football", "tennis", "basketball", "hockey", "golf", "baseball", "snooker", "volleyball", "am. football", "darts", "motorsport", "aussie rules", "esports", "netball", "badminton", "field hockey", "pesäpallo", "bandy", "floorball", "rugby league", "beach soccer", "futsal", "rugby union", "beach volleyball", "handball", "table tennis", "boxing", "horse racing", "water polo", "cricket", "kabaddi", "winter sports", "cycling", "mma"];
-    const isActuallyArticleDetail = pathname.startsWith("/news/") && !allSports.includes(pathname.replace("/news/", "").replace(/-/g, " ").toLowerCase());
-
-    const Tag = isActuallyArticleDetail ? "div" : "h1";
-
     return (
         <header className="z-50 w-full flex flex-col">
             {/* 1. TOP UTILITY BAR (Very Thin) */}
             <div className="bg-[#00141e] border-b border-white/5 py-1 hidden sm:block">
                 <div className="max-w-[1240px] mx-auto w-full px-2 flex justify-between items-center">
-                    <Tag className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80 select-none pointer-events-none">
-                        {title || getH1Text()}
-                    </Tag>
+                    <div className="text-[8px] font-medium text-white uppercase tracking-widest leading-none opacity-80 select-none pointer-events-none">
+                        {title || getBannerText()}
+                    </div>
                     <div className="flex gap-4 text-[8px] font-medium text-[var(--fs-text-dim)]">
                         <span className="hover:text-white cursor-pointer transition-colors">MOBILE APP</span>
                         <span className="hover:text-white cursor-pointer transition-colors">ADVERTISE</span>
                     </div>
                 </div>
             </div>
-
-
 
             {/* 3. MAIN HEADER LAYER */}
             <div className="bg-[var(--fs-header)] border-b border-white/5">
@@ -95,7 +85,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                         <nav className="hidden lg:flex items-center h-full">
                             <div className="flex h-full">
                                 <Link
-                                    href="/"
+                                    href="/predictions"
                                     className={cn(
                                         "px-6 flex items-center gap-3 border-r border-white/5 cursor-pointer hover:bg-white/5 transition-colors group relative h-full",
                                         isScoresActive ? "active-tab" : ""
@@ -193,7 +183,7 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                     <div className="flex items-center gap-1">
                         {[
                             {
-                                name: "Football", slug: "football", path: "/", icon: (props: any) => (
+                                name: "Football", slug: "football", path: "/football", icon: (props: any) => (
                                     <svg viewBox="0 0 20 20" fill="currentColor" {...props}>
                                         <path fillRule="evenodd" d="M17 2.93a9.96 9.96 0 1 0-14.08 14.1A9.96 9.96 0 0 0 17 2.92Zm.41 2.77a8.5 8.5 0 0 1 1.1 3.43L16.66 8.1l.75-2.4Zm-1.37-1.8.37.4-1.11 3.57-1.33.4-3.32-2.41V4.5l3.16-2.2a8.6 8.6 0 0 1 2.22 1.6ZM9.96 1.4c.78-.01 1.55.1 2.3.3l-2.3 1.6-2.3-1.6c.75-.2 1.52-.31 2.3-.3ZM3.9 3.9a8.6 8.6 0 0 1 2.22-1.6l3.16 2.2v1.36l-3.32 2.4-1.32-.4L3.52 4.3l.37-.4ZM2.52 5.7l.75 2.4-1.85 1.03a8.5 8.5 0 0 1 1.1-3.43Zm1.37 10.35-.22-.23H5.7l.65 1.95a8.6 8.6 0 0 1-2.45-1.72Zm2.01-1.6H2.63A8.5 8.5 0 0 1 1.4 10.7l2.75-1.55 1.41.43 1.28 3.91-.95.95Zm6.05 3.89c-1.3.3-2.66.3-3.97 0l-1.01-3.02 1.1-1.1h3.79l1.1 1.1-1.01 3.02Zm-.07-5.44H8.05L6.86 9.25 9.96 7l3.1 2.25-1.18 3.65Zm4.15 3.15a8.6 8.6 0 0 1-2.45 1.72l.66-1.94h2.01l-.22.22Zm-2-1.6-.95-.95 1.27-3.91 1.41-.43 2.76 1.55a8.5 8.5 0 0 1-1.22 3.74h-3.27Z" />
                                     </svg>
@@ -249,8 +239,8 @@ export default function Header({ pinnedLeagues, countriesByRegion, regionOrder }
                                 )
                             },
                         ].map((sport) => {
-                            const isSportActive = sport.path
-                                ? pathname === sport.path
+                            const isSportActive = sport.slug === "football"
+                                ? (pathname === "/" || pathname === "/football")
                                 : pathname === `/${sport.slug}`;
 
                             return (

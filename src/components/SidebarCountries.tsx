@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { cn, slugifyCountry } from "@/lib/utils";
 
 interface SidebarCountriesProps {
     countriesByRegion: Record<string, any[]>;
@@ -12,11 +13,7 @@ interface SidebarCountriesProps {
 export default function SidebarCountries({ countriesByRegion, regionOrder }: SidebarCountriesProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Flatten all countries with their region labels for a single list if preferred, 
-    // OR keep region grouping but hide everything after a certain point.
-    // The user's screenshot suggests a grouped list where "Europe" is shown, but they want to cut it off.
-
-    const LIMIT = 15;
+    const LIMIT = 18;
     let count = 0;
 
     return (
@@ -25,20 +22,25 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                 const countries = countriesByRegion[region];
                 if (!countries || countries.length === 0) return null;
 
+                const regionStartIndex = count + 1;
+                const shouldHideRegion = !isExpanded && regionStartIndex > LIMIT;
+
                 return (
-                    <div key={region} className="space-y-0.5">
+                    <div key={region} className={cn("space-y-0.5", shouldHideRegion && "hidden")}>
                         <div className="text-[10px] font-black text-[var(--fs-yellow)] uppercase px-2 py-2 mt-1">{region}</div>
                         {countries.map((country: any) => {
                             count++;
                             const shouldHide = !isExpanded && count > LIMIT;
-
-                            if (shouldHide) return null;
+                            const countrySlug = slugifyCountry(country.name);
 
                             return (
                                 <Link
                                     key={country.id}
-                                    href={`/predictions/football/${country.name.toLowerCase().replace(/\s+/g, '-')}`}
-                                    className="flex items-center gap-2 px-2 py-1 text-[11px] text-white hover:text-white cursor-pointer transition-colors hover:bg-white/5 rounded-sm group"
+                                    href={`/predictions/football/${countrySlug}`}
+                                    className={cn(
+                                        "flex items-center gap-2 px-2 py-1 text-[11px] text-white hover:text-white cursor-pointer transition-colors hover:bg-white/5 rounded-sm group",
+                                        shouldHide && "hidden"
+                                    )}
                                 >
                                     {country.flag_url && (
                                         <div
@@ -61,7 +63,7 @@ export default function SidebarCountries({ countriesByRegion, regionOrder }: Sid
                     onClick={() => setIsExpanded(true)}
                     className="w-full flex items-center justify-between px-2 py-2 mt-2 text-[10px] font-black uppercase text-[var(--fs-yellow)] hover:bg-white/5 transition-colors rounded-sm"
                 >
-                    <span>Show more</span>
+                    <span>Show more ({count - LIMIT})</span>
                     <ChevronDown size={12} />
                 </button>
             )}

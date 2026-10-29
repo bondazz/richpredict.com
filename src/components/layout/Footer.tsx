@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Facebook, Twitter, Instagram, Zap } from "lucide-react";
 import type { Prediction, BlogPost } from "@/lib/supabase";
+import { generateSEOSlug } from "@/lib/utils";
 
 interface FooterProps {
     footballPredictions?: Prediction[];
@@ -11,43 +12,28 @@ interface FooterProps {
     latestNews?: BlogPost[];
 }
 
-const FOOTBALL_TIPS_OPTIONS = [
-    "Today's Football Tips",
-    "Tomorrow's Football Tips",
-    "Premier League Tips",
-    "Accumulator Tips",
-    "Correct Score Tips",
-    "Today's BTTS Tips",
-    "Tomorrow's BTTS Tips",
-    "Premier League BTTS Tips",
-    "Championship BTTS Tips",
-    "La Liga BTTS Tips",
-    "Today's Over 2.5 Tips",
-    "Tomorrow's Over 2.5 Tips",
-    "EPL Over 2.5 Tips",
-    "Championship Over 2.5 Tips",
-    "Bundesliga Over 2.5 Tips",
+const TOP_COUNTRY_HUBS = [
+    { label: "England Premier League Tips", href: "/predictions/football/england" },
+    { label: "Spain LaLiga Predictions", href: "/predictions/football/spain" },
+    { label: "Germany Bundesliga Tips", href: "/predictions/football/germany" },
+    { label: "Italy Serie A Predictions", href: "/predictions/football/italy" },
+    { label: "France Ligue 1 Tips", href: "/predictions/football/france" },
+    { label: "UEFA & Europe Predictions", href: "/predictions/football/europe" },
+    { label: "Brazil Serie A Tips", href: "/predictions/football/brazil" },
+    { label: "Netherlands Eredivisie Tips", href: "/predictions/football/netherlands" },
 ];
 
-const QUICK_TIPS = [
-    "Accumulator Tips",
-    "Both Teams To Score Tips",
-    "Correct Score Tips",
-    "Bet of the Day Tips",
-    "Lay of the Day Tips",
-    "Daily Treble Tips",
-    "In-Play Tips",
+const QUICK_SPORT_HUBS = [
+    { label: "All Football Predictions", href: "/predictions" },
+    { label: "Football Match Center", href: "/football" },
+    { label: "Tennis Match Predictions", href: "/tennis" },
+    { label: "Basketball Betting Tips", href: "/basketball" },
+    { label: "Ice Hockey Predictions", href: "/hockey" },
+    { label: "VIP Premium Analytics", href: "/vip" },
+    { label: "Sports Betting News", href: "/news" },
 ];
 
 export default function Footer({ footballPredictions = [], tennisPredictions = [], latestNews = [] }: FooterProps) {
-    const [randomFootballTips, setRandomFootballTips] = React.useState<string[]>([]);
-
-    React.useEffect(() => {
-        // Generate 8 random football tips only on client to avoid hydration mismatch
-        const random = [...FOOTBALL_TIPS_OPTIONS].sort(() => 0.5 - Math.random()).slice(0, 8);
-        setRandomFootballTips(random);
-    }, []);
-
     const socialLinks = [
         { id: "fb", label: "Facebook", href: "https://facebook.com/richpredict" },
         { id: "tw", label: "X", href: "https://twitter.com/richpredict" },
@@ -63,7 +49,7 @@ export default function Footer({ footballPredictions = [], tennisPredictions = [
         { label: "Advertise", href: "/advertise" },
         { label: "Contact", href: "/contact" },
         { label: "Mobile", href: "/mobile" },
-        { label: "Live Scores", href: "/" },
+        { label: "All Predictions", href: "/predictions" },
         { label: "Recommended Sites", href: "/recommended" },
         { label: "FAQ", href: "/faq" }
     ];
@@ -84,13 +70,16 @@ export default function Footer({ footballPredictions = [], tennisPredictions = [
                                 </Link>
                             </h3>
                             <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
-                                {footballPredictions.map((pred) => (
-                                    <div key={pred.id}>
-                                        <Link href={`/predictions/${pred.slug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
-                                            {pred.home_team} - {pred.away_team}
-                                        </Link>
-                                    </div>
-                                ))}
+                                {footballPredictions.map((pred) => {
+                                    const seoSlug = generateSEOSlug(pred.home_team, pred.away_team, pred.slug);
+                                    return (
+                                        <div key={pred.id}>
+                                            <Link href={`/predictions/${seoSlug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                                {pred.home_team} vs {pred.away_team}
+                                            </Link>
+                                        </div>
+                                    );
+                                })}
                                 {footballPredictions.length === 0 && (
                                     <div className="text-[11px] text-white/40 italic uppercase tracking-tighter">No predictions found</div>
                                 )}
@@ -105,13 +94,16 @@ export default function Footer({ footballPredictions = [], tennisPredictions = [
                                 </Link>
                             </h3>
                             <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
-                                {tennisPredictions.map((pred) => (
-                                    <div key={pred.id}>
-                                        <Link href={`/predictions/${pred.slug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
-                                            {pred.home_team} - {pred.away_team}
-                                        </Link>
-                                    </div>
-                                ))}
+                                {tennisPredictions.map((pred) => {
+                                    const seoSlug = generateSEOSlug(pred.home_team, pred.away_team, pred.slug);
+                                    return (
+                                        <div key={pred.id}>
+                                            <Link href={`/predictions/${seoSlug}`} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                                {pred.home_team} vs {pred.away_team}
+                                            </Link>
+                                        </div>
+                                    );
+                                })}
                                 {tennisPredictions.length === 0 && (
                                     <div className="text-[11px] text-white/40 italic uppercase tracking-tighter">No predictions found</div>
                                 )}
@@ -139,36 +131,36 @@ export default function Footer({ footballPredictions = [], tennisPredictions = [
                             </div>
                         </div>
 
-                        {/* Football Tips (Random) */}
+                        {/* Top Country Hubs */}
                         <div className="seoFooter__category">
                             <h3 className="seoFooter__categoryTitle mb-5">
-                                <Link href="/" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
-                                    FOOTBALL TIPS
+                                <Link href="/predictions" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    TOP LEAGUES & COUNTRIES
                                 </Link>
                             </h3>
                             <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
-                                {randomFootballTips.map((tip, idx) => (
-                                    <div key={idx}>
-                                        <Link href="/" className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
-                                            {tip}
+                                {TOP_COUNTRY_HUBS.map((item) => (
+                                    <div key={item.href}>
+                                        <Link href={item.href} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                            {item.label}
                                         </Link>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Quick Tips (Dofollow Home Links) */}
+                        {/* Quick Sport Hubs */}
                         <div className="seoFooter__category">
                             <h3 className="seoFooter__categoryTitle mb-5">
-                                <Link href="/" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
-                                    QUICK TIPS
+                                <Link href="/predictions" className="text-[12px] font-black text-white hover:text-[var(--fs-yellow)] uppercase tracking-[0.1em] transition-colors">
+                                    PREDICTION HUBS
                                 </Link>
                             </h3>
                             <div className="seoFooter__categoryLinks flex flex-col gap-2.5">
-                                {QUICK_TIPS.map((tip, idx) => (
-                                    <div key={idx}>
-                                        <Link href="/" rel="dofollow" className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
-                                            {tip}
+                                {QUICK_SPORT_HUBS.map((item) => (
+                                    <div key={item.href}>
+                                        <Link href={item.href} className="text-[11px] font-medium text-white hover:text-[var(--fs-yellow)] transition-colors">
+                                            {item.label}
                                         </Link>
                                     </div>
                                 ))}
@@ -239,11 +231,11 @@ export default function Footer({ footballPredictions = [], tennisPredictions = [
                 <div className="footer mt-10 pb-10 border-t border-white/5 pt-10">
                     <div className="footer__content flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-white/40">
-                            <Link href="#" className="footer__link text-[10px] font-black text-white uppercase hover:text-[var(--fs-yellow)] transition-colors">
-                                Lite version
+                            <Link href="/predictions" className="footer__link text-[10px] font-black text-white uppercase hover:text-[var(--fs-yellow)] transition-colors">
+                                Match Archive
                             </Link>
                             <div className="footer__gambleResponsiblyLink text-[10px] font-black uppercase text-white">
-                                Gamble Responsibly. <Link href="#" className="text-white hover:underline">Gambling Therapy</Link>. 18+
+                                Gamble Responsibly. <Link href="/terms" className="text-white hover:underline">Gambling Therapy</Link>. 18+
                             </div>
                         </div>
 
@@ -282,7 +274,7 @@ function SocialIconById({ id }: { id: string }) {
     if (id === 'fb') return <Facebook size={14} />;
     if (id === 'tw') return <Twitter size={14} />;
     if (id === 'in') return <Instagram size={14} />;
-    return <Zap size={14} />; // Default/TikTok fallback
+    return <Zap size={14} />;
 }
 
 function StoreButton({ type }: { type: 'apple' | 'google' | 'huawei' }) {
@@ -297,7 +289,7 @@ function StoreButton({ type }: { type: 'apple' | 'google' | 'huawei' }) {
         huawei: "Explore it on AppGallery",
     };
     return (
-        <Link href="#" className="opacity-80 hover:opacity-100 transition-opacity" aria-label={labels[type]}>
+        <Link href="/mobile" className="opacity-80 hover:opacity-100 transition-opacity" aria-label={labels[type]}>
             <img src={urls[type]} alt={labels[type]} height={32} width={120} className="h-8 w-auto filter grayscale invert" loading="lazy" />
         </Link>
     );

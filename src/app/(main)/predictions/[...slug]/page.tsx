@@ -1,8 +1,8 @@
-export const revalidate = 0;
+export const revalidate = 3600;
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
-    Trophy, Zap, ShieldCheck, ChevronLeft, Star, Target, ChevronRight, ChevronDown, Loader2, ArrowRight,
+    Trophy, Zap, ShieldCheck, ChevronLeft, Target, ChevronRight, ChevronDown, ArrowRight,
     Calendar, Clock, TrendingUp, Activity
 } from "lucide-react";
 import Link from "next/link";
@@ -41,7 +41,7 @@ import PremiumLockedMatches from "@/components/predictions/PremiumLockedMatches"
 import TopTicker from "@/components/layout/TopTicker";
 import DateNavigator from "@/components/layout/DateNavigator";
 import { SiteStatistics } from "@/components/SiteStatistics";
-import { cn, generateSEOSlug, getTeamLogo } from "@/lib/utils";
+import { generateSEOSlug, getTeamLogo, slugifyCountry } from "@/lib/utils";
 
 interface Props {
     params: Promise<{ slug: string[] }>;
@@ -51,17 +51,24 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug: slugs } = await params;
 
-    // CASE 1: Country Predictions (/predictions/football/azerbaijan)
+    // CASE 1: Country Predictions (/predictions/football/england)
     if (slugs.length === 2) {
         const [sport, slug] = slugs;
         const country = await getCountryByName(slug);
         if (country) {
             const countryName = country.name;
+            const canonicalCountrySlug = slugifyCountry(countryName);
             const sportName = sport.charAt(0).toUpperCase() + sport.slice(1);
             return {
-                title: `${countryName} ${sportName} Predictions & Betting Tips`,
-                description: `Get the most accurate AI-powered ${sport} predictions for ${countryName}. Expert betting tips, match analysis, and high-probability outcomes for all ${countryName} leagues.`,
-                alternates: { canonical: `https://richpredict.com/predictions/${sport.toLowerCase()}/${slug.toLowerCase()}` }
+                title: `${countryName} ${sportName} Predictions, Betting Tips & League Previews`,
+                description: `Get accurate AI-powered ${sport.toLowerCase()} predictions for ${countryName}. Mathematical betting tips, xG match analysis, and high-probability picks for all ${countryName} leagues.`,
+                alternates: { canonical: `https://richpredict.com/predictions/${sport.toLowerCase()}/${canonicalCountrySlug}` },
+                openGraph: {
+                    title: `${countryName} ${sportName} Predictions & Betting Tips | RichPredict`,
+                    description: `Expert AI ${sport.toLowerCase()} predictions, tactical previews, and betting tips for ${countryName} leagues.`,
+                    url: `https://richpredict.com/predictions/${sport.toLowerCase()}/${canonicalCountrySlug}`,
+                    type: 'website',
+                }
             };
         }
     }
@@ -70,25 +77,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (slugs.length === 1) {
         const slug = slugs[0];
 
-        // Try match first
         const match = await getPredictionBySlug(slug);
         if (match) {
+            const canonicalMatchSlug = generateSEOSlug(match.home_team, match.away_team, match.slug);
+            const canonicalUrl = `https://richpredict.com/predictions/${canonicalMatchSlug}`;
+            const leagueLabel = match.league || 'Football';
             return {
-                title: `${match.home_team} vs ${match.away_team} Predictions - Match Insight & Tips`,
-                description: `Professional AI football predictions for ${match.home_team} vs ${match.away_team}. Win probability, H2H statistics, and expert betting insights for today's match.`,
+                title: `${match.home_team} vs ${match.away_team} Prediction, Betting Tips & Match Preview`,
+                description: `AI football prediction for ${match.home_team} vs ${match.away_team} (${leagueLabel}): ${match.prediction} with ${match.confidence || '75%'} confidence. Read full H2H stats, tactical preview, and odds.`,
                 alternates: {
-                    canonical: `https://richpredict.com/predictions/${slug}`,
+                    canonical: canonicalUrl,
                 },
+                openGraph: {
+                    title: `${match.home_team} vs ${match.away_team} Prediction & Tactical Preview | RichPredict`,
+                    description: `Expert AI prediction for ${match.home_team} vs ${match.away_team} (${leagueLabel}): Pick ${match.prediction} (${match.confidence || '75%'} confidence).`,
+                    url: canonicalUrl,
+                    type: 'article',
+                }
             };
         }
 
-        // Try country fallback
         const country = await getCountryByName(slug);
         if (country) {
+            const canonicalCountrySlug = slugifyCountry(country.name);
             return {
-                title: `${country.name} Football Predictions`,
+                title: `${country.name} Football Predictions & Betting Tips`,
+                description: `Accurate AI football predictions, league previews, and mathematical betting tips for ${country.name}.`,
                 alternates: {
-                    canonical: `https://richpredict.com/predictions/${slug.toLowerCase()}`,
+                    canonical: `https://richpredict.com/predictions/football/${canonicalCountrySlug}`,
                 },
             };
         }
@@ -108,7 +124,6 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
     const sp = await searchParams;
     const selectedDate = sp.date || new Date().toISOString().split('T')[0];
 
-    // --- LOGIC: Identify if this is a country page or a match page ---
     let country: any = null;
     let match: any = null;
     let sportName = "Football";
@@ -133,20 +148,27 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
         let allTeams: any[] = [];
         let blogPosts: BlogPost[] = [];
         let premiumCount = 0;
+        let isGlobalFallback = false;
 
         try {
             const [preds, leagues, countries, pCount, blogs] = await Promise.all([
-                getPredictionsByCountry(country.id, 100, selectedDate),
+                getPredictionsByCountry(country.id, 60, selectedDate),
                 getLeaguesByCountry(country.id),
-                getCountriesByRegion(),
+                getCountriesByRegion(true),
                 getPremiumPredictionsCount(sportName),
                 getBlogPosts(3)
             ]);
             predictions = preds || [];
 
-            // Fallback: If no matches for selectedDate, show latest matches for this country so it's never empty
+            // Fallback 1: Latest matches for this country across all dates
             if (predictions.length === 0) {
-                predictions = (await getPredictionsByCountry(country.id, 100)) || [];
+                predictions = (await getPredictionsByCountry(country.id, 60)) || [];
+            }
+
+            // Fallback 2: If this country has no matches in DB yet, fallback to featured global predictions so it never renders Soft-404 NO_DATA_DETECTED
+            if (predictions.length === 0) {
+                predictions = (await getPredictions(30, 'Football')) || [];
+                isGlobalFallback = true;
             }
 
             countryLeagues = leagues || [];
@@ -154,7 +176,6 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
             premiumCount = pCount || 0;
             blogPosts = blogs || [];
 
-            // Fetch only relevant team logos
             const relevantTeamNames = Array.from(new Set(predictions.flatMap(p => [p.home_team, p.away_team])));
             allTeams = await getTeamsByNames(relevantTeamNames);
         } catch (e) { console.error(e); }
@@ -164,7 +185,7 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
         const getLogo = (name: string) => getTeamLogo(name, dbLogoMap);
 
         const groupedLeagues = predictions.reduce((acc: any, prediction: Prediction) => {
-            const leagueName = prediction.league || "Other Competitions";
+            const leagueName = prediction.league || "Featured Competitions";
             if (!acc[leagueName]) {
                 acc[leagueName] = { id: leagueName.toLowerCase().replace(/\s+/g, '-'), name: leagueName, country: country.name, matches: [] };
             }
@@ -179,42 +200,63 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
             acc[rName].push(c);
             return acc;
         }, {});
-        const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
+        const regionOrder = ["Europe", "World", "South America", "North & Central America", "North and Central America", "Asia", "Africa", "Australia & Oceania", "Australia and Oceania", "Other"];
+
+        const canonicalCountryUrl = `https://richpredict.com/predictions/${sportSlug}/${slugifyCountry(country.name)}`;
+        const countryBreadcrumbSchema = generateBreadcrumbSchema([
+            { name: "Home", url: "https://richpredict.com" },
+            { name: `${sportName} Predictions`, url: `https://richpredict.com/${sportSlug}` },
+            { name: `${country.name} ${sportName} Predictions`, url: canonicalCountryUrl }
+        ]);
+
+        const countryCollectionSchema = {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": `${country.name} ${sportName} Predictions & Betting Tips`,
+            "description": `AI-powered ${sportName.toLowerCase()} predictions, match previews, and mathematical betting tips for ${country.name} leagues.`,
+            "url": canonicalCountryUrl,
+            "mainEntity": {
+                "@type": "ItemList",
+                "itemListElement": predictions.slice(0, 10).map((p, idx) => ({
+                    "@type": "ListItem",
+                    "position": idx + 1,
+                    "name": `${p.home_team} vs ${p.away_team} (${p.league})`,
+                    "url": `https://richpredict.com/predictions/${generateSEOSlug(p.home_team, p.away_team, p.slug)}`
+                }))
+            }
+        };
 
         return (
             <div className="flex flex-col min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
-                <TitleSetter title={`${country.name} Football Predictions`} />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify([countryBreadcrumbSchema, countryCollectionSchema]) }}
+                />
+                <TitleSetter title={`${country.name} ${sportName} Predictions`} />
                 <TopTicker>
                     <div className="flex gap-4 items-center">
-                        <Link href="/" className="flex items-center gap-1.5 text-white/40 hover:text-[var(--fs-yellow)] transition-colors">
-                            <ChevronLeft size={14} /> Back
+                        <Link href="/predictions" className="flex items-center gap-1.5 text-white/40 hover:text-[var(--fs-yellow)] transition-colors">
+                            <ChevronLeft size={14} /> All Countries
                         </Link>
                         <div className="h-3 w-[1px] bg-white/10" />
-                        <TopTicker>
-                            <nav aria-label="Breadcrumb" className="w-full">
-                                <ol className="flex items-center gap-2.5 m-0 p-0 list-none" itemScope itemType="https://schema.org/BreadcrumbList">
-                                    <li className="flex items-center gap-2.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                                        <div className="flex items-center gap-2 text-white/60">
-                                            <svg fill="currentColor" viewBox="0 0 20 20" width="14" height="14" className="opacity-80">
-                                                <path fillRule="evenodd" d="M17 2.93a9.96 9.96 0 1 0-14.08 14.1A9.96 9.96 0 0 0 17 2.92Zm.41 2.77a8.5 8.5 0 0 1 1.1 3.43L16.66 8.1l.75-2.4Zm-1.37-1.8.37.4-1.11 3.57-1.33.4-3.32-2.41V4.5l3.16-2.2a8.6 8.6 0 0 1 2.22 1.6ZM9.96 1.4c.78-.01 1.55.1 2.3.3l-2.3 1.6-2.3-1.6c.75-.2 1.52-.31 2.3-.3ZM3.9 3.9a8.6 8.6 0 0 1 2.22-1.6l3.16 2.2v1.36l-3.32 2.4-1.32-.4L3.52 4.3l.37-.4ZM2.52 5.7l.75 2.4-1.85 1.03a8.5 8.5 0 0 1 1.1-3.43Zm1.37 10.35-.22-.23H5.7l.65 1.95a8.6 8.6 0 0 1-2.45-1.72Zm2.01-1.6H2.63A8.5 8.5 0 0 1 1.4 10.7l2.75-1.55 1.41.43 1.28 3.91-.95.95Zm6.05 3.89c-1.3.3-2.66.3-3.97 0l-1.01-3.02 1.1-1.1h3.79l1.1 1.1-1.01 3.02Zm-.07-5.44H8.05L6.86 9.25 9.96 7l3.1 2.25-1.18 3.65Zm4.15 3.15a8.6 8.6 0 0 1-2.45 1.72l.66-1.94h2.01l-.22.22Zm-2-1.6-.95-.95 1.27-3.91 1.41-.43 2.76 1.55a8.5 8.5 0 0 1-1.22 3.74h-3.27Z"></path>
-                                            </svg>
-                                            <Link href={`/${sportSlug}`} className="hover:text-white transition-colors uppercase font-black" itemProp="item">
-                                                <span itemProp="name">{sportName}</span>
-                                            </Link>
-                                        </div>
-                                        <meta itemProp="position" content="1" />
-                                        <ChevronRight size={12} className="text-white/20" />
-                                    </li>
-                                    <li className="flex items-center gap-2.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                                        <div className="flex items-center gap-2 text-white uppercase font-black">
-                                            <Flag code={country.code} name={country.name} className="w-5 h-3.5 shadow-sm" />
-                                            <span itemProp="name">{country.name}</span>
-                                        </div>
-                                        <meta itemProp="position" content="2" />
-                                    </li>
-                                </ol>
-                            </nav>
-                        </TopTicker>
+                        <nav aria-label="Breadcrumb" className="w-full">
+                            <ol className="flex items-center gap-2.5 m-0 p-0 list-none">
+                                <li className="flex items-center gap-2.5">
+                                    <div className="flex items-center gap-2 text-white/60">
+                                        <Link href={`/${sportSlug}`} className="hover:text-white transition-colors uppercase font-black">
+                                            <span>{sportName}</span>
+                                        </Link>
+                                    </div>
+                                    <ChevronRight size={12} className="text-white/20" />
+                                </li>
+                                <li className="flex items-center gap-2.5">
+                                    <div className="flex items-center gap-2 text-white uppercase font-black">
+                                        <Flag code={country.code} url={country.flag_url} name={country.name} className="w-5 h-3.5 shadow-sm" />
+                                        <span>{country.name}</span>
+                                    </div>
+                                </li>
+                            </ol>
+                        </nav>
                     </div>
                 </TopTicker>
 
@@ -222,15 +264,15 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                     <aside className="hidden lg:flex flex-col space-y-4 pr-2">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2.5 px-2 py-3 border-b border-white/5">
-                                <Flag code={country.code} name={country.name} className="w-4 h-3 rounded-[1px] shadow-sm" />
+                                <Flag code={country.code} url={country.flag_url} name={country.name} className="w-4 h-3 rounded-[1px] shadow-sm" />
                                 <span className="text-[13px] font-black text-white uppercase tracking-tight">{country.name}</span>
                             </div>
                             <div className="space-y-1">
                                 {countryLeagues.length > 0 ? countryLeagues.map((league: any) => (
-                                    <div key={league.id} className="px-2 py-2 text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/5 cursor-pointer transition-all rounded-sm truncate">
+                                    <div key={league.id} className="px-2 py-2 text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/5 transition-all rounded-sm truncate">
                                         {league.name}
                                     </div>
-                                )) : <div className="px-2 py-1 text-[10px] text-white/20 italic">No leagues found</div>}
+                                )) : <div className="px-2 py-1 text-[10px] text-white/40 italic">National Competitions</div>}
                             </div>
                         </div>
                         <SidebarAd />
@@ -239,10 +281,25 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                     </aside>
 
                     <div className="space-y-3">
+                        {/* Visible Server-Rendered H1 Header for Country Hub */}
+                        <div className="bg-[var(--fs-header)] border border-white/5 rounded-xl p-4 flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2.5">
+                                <Flag code={country.code} url={country.flag_url} name={country.name} className="w-5 h-3.5 rounded-[1px] shadow-sm" />
+                                <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-white">
+                                    {country.name} {sportName} Predictions, Betting Tips &amp; Match Previews
+                                </h1>
+                            </div>
+                            <p className="text-[11px] text-white/60 leading-relaxed">
+                                {isGlobalFallback
+                                    ? `Our AI analytics engine monitors ${country.name} ${sportName.toLowerCase()} competitions and international fixtures. While the next domestic ${country.name} matchday card is being scheduled, explore our top-rated active football predictions below.`
+                                    : `Mathematical ${country.name} ${sportName.toLowerCase()} predictions, win probabilities, and tactical previews across ${countryLeagues.length || displayLeagues.length} domestic competitions${countryLeagues.length > 0 ? ` (${countryLeagues.slice(0, 4).map((l: any) => l.name).join(', ')})` : ''}.`}
+                            </p>
+                        </div>
+
                         <InnerAdBanner />
                         <DateNavigator />
                         <PremiumLockedMatches sport={sportName.toUpperCase()} count={premiumCount} />
-                        {displayLeagues.length > 0 ? displayLeagues.map((league: any, index: number) => (
+                        {displayLeagues.map((league: any, index: number) => (
                             <React.Fragment key={league.id}>
                                 <div className="sportName soccer overflow-hidden rounded-xl border border-white/5 shadow-2xl">
                                     <div className="headerLeague__wrapper bg-gradient-to-b from-[#164e63] to-[#083344] border-t border-white/20 border-b border-black/40 shadow-lg">
@@ -270,69 +327,84 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                                     </div>
 
                                     <div className="event__content bg-[var(--fs-header)] divide-y divide-white/5">
-                                        {league.matches.map((match: Prediction) => (
-                                            <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
-                                                <GameTime
-                                                    date={match.match_date}
-                                                    time={match.match_time || "19:00"}
-                                                    className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5 ml-2"
-                                                />
+                                        {league.matches.map((match: Prediction) => {
+                                            const matchSeoSlug = generateSEOSlug(match.home_team, match.away_team, match.slug);
+                                            return (
+                                                <div key={match.id} className="event__match group flex items-center h-14 hover:bg-white/[0.04] transition-colors relative border-b border-black/10">
+                                                    <GameTime
+                                                        date={match.match_date}
+                                                        time={match.match_time || "19:00"}
+                                                        className="w-16 sm:w-24 flex-shrink-0 border-r border-white/5 ml-2"
+                                                    />
 
-                                                <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
-                                                    <div className="flex items-center gap-2 sm:gap-2.5">
-                                                        <img
-                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
-                                                            src={getLogo(match.home_team)}
-                                                            alt={match.home_team}
-                                                            loading="lazy"
-                                                        />
-                                                        <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
+                                                    <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 px-3 sm:px-6 min-w-0">
+                                                        <div className="flex items-center gap-2 sm:gap-2.5">
+                                                            <img
+                                                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                                src={getLogo(match.home_team)}
+                                                                alt={match.home_team}
+                                                                loading="lazy"
+                                                            />
+                                                            <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.home_team}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 sm:gap-2.5">
+                                                            <img
+                                                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
+                                                                src={getLogo(match.away_team)}
+                                                                alt={match.away_team}
+                                                                loading="lazy"
+                                                            />
+                                                            <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2 sm:gap-2.5">
-                                                        <img
-                                                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain pointer-events-none select-none"
-                                                            src={getLogo(match.away_team)}
-                                                            alt={match.away_team}
-                                                            loading="lazy"
-                                                        />
-                                                        <span className="text-[11px] sm:text-[13px] font-medium text-white truncate drop-shadow-sm">{match.away_team}</span>
-                                                    </div>
-                                                </div>
 
-                                                <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
+                                                    <div className="w-32 sm:w-40 flex justify-center flex-shrink-0 relative group/tooltip pr-2 z-10">
+                                                        <Link
+                                                            href={`/predictions/${matchSeoSlug}`}
+                                                            className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
+                                                        >
+                                                            Match Preview
+                                                        </Link>
+                                                    </div>
+
                                                     <Link
-                                                        href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                        className="px-2 sm:px-3 py-1 text-[8px] sm:text-[9px] font-medium uppercase bg-white/5 border border-white/10 rounded-full text-white/80 hover:bg-[var(--fs-yellow)] hover:text-black hover:border-[var(--fs-yellow)] transition-all tracking-wider whitespace-nowrap shadow-sm"
-                                                    >
-                                                        Match Preview
-                                                    </Link>
-
-                                                    {/* Tooltip (Desktop Only) */}
-                                                    <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] text-white text-[10px] font-medium rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible pointer-events-none z-50 shadow-xl border border-white/10 whitespace-nowrap">
-                                                        Click to see expert prediction!
-                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#1e293b]"></div>
-                                                    </div>
+                                                        href={`/predictions/${matchSeoSlug}`}
+                                                        className="absolute inset-0 z-0"
+                                                        aria-label={`View match preview for ${match.home_team} vs ${match.away_team}`}
+                                                    />
                                                 </div>
-
-                                                <Link
-                                                    href={`/predictions/${generateSEOSlug(match.home_team, match.away_team, match.slug)}`}
-                                                    className="absolute inset-0 z-0"
-                                                    aria-label={`View match preview for ${match.home_team} vs ${match.away_team}`}
-                                                />
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                                 {index === 0 && <RichPredictNews posts={blogPosts} />}
                             </React.Fragment>
-                        )) : (
-                            <div className="p-20 text-center bg-[var(--fs-header)] rounded-sm border border-white/5 space-y-4">
-                                <Loader2 className="w-8 h-8 animate-spin text-[var(--fs-yellow)] mx-auto" />
-                                <p className="text-[11px] font-black uppercase tracking-widest text-[var(--fs-text-dim)]">
-                                    NO_DATA_DETECTED
-                                </p>
-                            </div>
-                        )}
+                        ))}
+
+                        {/* Country-Specific SEO Analytical Overview */}
+                        <section className="bg-[var(--fs-header)] border border-white/5 rounded-xl p-5 space-y-3">
+                            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                                About {country.name} {sportName} Predictions &amp; Mathematical Analytics
+                            </h2>
+                            <p className="text-xs text-white/70 leading-relaxed">
+                                RichPredict provides automated, data-driven {sportName.toLowerCase()} predictions for {country.name} leagues and cup tournaments. Each fixture in {country.name} is evaluated by our RP-GPT statistical model using historical club performance, home and away goal expectancy (xG), head-to-head trends, and market odds movements.
+                            </p>
+                            {countryLeagues.length > 0 && (
+                                <div className="pt-2">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--fs-yellow)] mb-2">
+                                        Covered Competitions in {country.name}
+                                    </h3>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {countryLeagues.map((l: any) => (
+                                            <span key={l.id} className="px-2.5 py-1 rounded bg-white/[0.03] border border-white/5 text-[10px] text-white/70">
+                                                {l.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
                         <AIPredictTrust />
                         <Testimonials />
                     </div>
@@ -353,9 +425,9 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                                     </div>
                                 </div>
                                 <p className="text-[11px] font-bold text-white/50 leading-relaxed uppercase">Get 95%+ accurate AI predictions and exclusive analytics.</p>
-                                <button className="w-full bg-[var(--fs-yellow)] text-black py-3 rounded-lg text-[11px] font-[Klapt] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(255,221,0,0.15)] flex items-center justify-center gap-2">
+                                <Link href="/vip" className="w-full bg-[var(--fs-yellow)] text-black py-3 rounded-lg text-[11px] font-[Klapt] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_20px_rgba(255,221,0,0.15)] flex items-center justify-center gap-2">
                                     UNLOCK ACCESS <ArrowRight size={14} />
-                                </button>
+                                </Link>
                             </div>
                         </div>
                         <SiteStatistics />
@@ -369,21 +441,19 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
     if (match) {
         let pinnedLeagues: any[] = [];
         let allCountries: any[] = [];
-        let recentPredictions: any[] = [];
         let allTeams: any[] = [];
         let featuredMatches: any[] = [];
 
         try {
-            const [pinned, countries, recents, featured] = await Promise.all([
-                getPinnedLeagues(), getCountriesByRegion(), getPredictions(5),
+            const [pinned, countries, featured] = await Promise.all([
+                getPinnedLeagues(),
+                getCountriesByRegion(true),
                 getFeaturedMatches(match.leagues?.country_id, 10, match.category)
             ]);
             pinnedLeagues = pinned || [];
             allCountries = countries || [];
-            recentPredictions = recents || [];
             featuredMatches = featured || [];
 
-            // Fetch only relevant team logos for match and featured matches
             const teamNames = new Set([match.home_team, match.away_team]);
             featuredMatches.forEach(fm => { teamNames.add(fm.home_team); teamNames.add(fm.away_team); });
             allTeams = await getTeamsByNames(Array.from(teamNames));
@@ -398,46 +468,67 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
             acc[rName].push(c);
             return acc;
         }, {});
-        const regionOrder = ["Europe", "World", "South America", "North & Central America", "Asia", "Australia & Oceania"];
+        const regionOrder = ["Europe", "World", "South America", "North & Central America", "North and Central America", "Asia", "Africa", "Australia & Oceania", "Australia and Oceania", "Other"];
+
+        const canonicalSlug = generateSEOSlug(match.home_team, match.away_team, match.slug);
+        const canonicalUrl = `https://richpredict.com/predictions/${canonicalSlug}`;
+        const countryName = match.leagues?.countries?.name;
+        const countrySlug = countryName ? slugifyCountry(countryName) : '';
+
+        const breadcrumbItems = [
+            { name: "Football", url: "https://richpredict.com/football" },
+            ...(countryName ? [{ name: countryName, url: `https://richpredict.com/predictions/football/${countrySlug}` }] : []),
+            { name: `${match.home_team} vs ${match.away_team}`, url: canonicalUrl }
+        ];
+
+        const sportsEventSchema = generateSportsEventSchema(
+            { ...match, home_logo: getLogo(match.home_team), away_logo: getLogo(match.away_team) },
+            canonicalUrl
+        );
+        const predictionArticleSchema = generatePredictionSchema(match, canonicalUrl);
+        const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
         return (
             <div className="min-h-screen bg-[var(--fs-bg)] text-[var(--fs-text-main)] font-sans">
+                {/* JSON-LD Structured Data for Match Page */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify([sportsEventSchema, predictionArticleSchema, breadcrumbSchema])
+                    }}
+                />
                 <TitleSetter title={`${match.home_team} vs ${match.away_team} Predictions`} />
                 <TopTicker>
                     <nav aria-label="Breadcrumb" className="w-full">
-                        <ol className="flex items-center gap-2.5 m-0 p-0 list-none" itemScope itemType="https://schema.org/BreadcrumbList">
-                            <li className="flex items-center gap-2.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                        <ol className="flex items-center gap-2.5 m-0 p-0 list-none">
+                            <li className="flex items-center gap-2.5">
                                 <div className="flex items-center gap-2 text-white/60">
                                     <svg fill="currentColor" viewBox="0 0 20 20" width="14" height="14" className="opacity-80">
                                         <path fillRule="evenodd" d="M17 2.93a9.96 9.96 0 1 0-14.08 14.1A9.96 9.96 0 0 0 17 2.92Zm.41 2.77a8.5 8.5 0 0 1 1.1 3.43L16.66 8.1l.75-2.4Zm-1.37-1.8.37.4-1.11 3.57-1.33.4-3.32-2.41V4.5l3.16-2.2a8.6 8.6 0 0 1 2.22 1.6ZM9.96 1.4c.78-.01 1.55.1 2.3.3l-2.3 1.6-2.3-1.6c.75-.2 1.52-.31 2.3-.3ZM3.9 3.9a8.6 8.6 0 0 1 2.22-1.6l3.16 2.2v1.36l-3.32 2.4-1.32-.4L3.52 4.3l.37-.4ZM2.52 5.7l.75 2.4-1.85 1.03a8.5 8.5 0 0 1 1.1-3.43Zm1.37 10.35-.22-.23H5.7l.65 1.95a8.6 8.6 0 0 1-2.45-1.72Zm2.01-1.6H2.63A8.5 8.5 0 0 1 1.4 10.7l2.75-1.55 1.41.43 1.28 3.91-.95.95Zm6.05 3.89c-1.3.3-2.66.3-3.97 0l-1.01-3.02 1.1-1.1h3.79l1.1 1.1-1.01 3.02Zm-.07-5.44H8.05L6.86 9.25 9.96 7l3.1 2.25-1.18 3.65Zm4.15 3.15a8.6 8.6 0 0 1-2.45 1.72l.66-1.94h2.01l-.22.22Zm-2-1.6-.95-.95 1.27-3.91 1.41-.43 2.76 1.55a8.5 8.5 0 0 1-1.22 3.74h-3.27Z"></path>
                                     </svg>
-                                    <Link href="/" className="hover:text-white transition-colors uppercase font-black" itemProp="item">
-                                        <span itemProp="name">Football</span>
+                                    <Link href="/football" className="hover:text-white transition-colors uppercase font-black">
+                                        <span>Football</span>
                                     </Link>
                                 </div>
-                                <meta itemProp="position" content="1" />
                                 <ChevronRight size={12} className="text-white/20" />
                             </li>
-                            {match.leagues?.countries?.name && (
-                                <li className="flex items-center gap-2.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                            {countryName && (
+                                <li className="flex items-center gap-2.5">
                                     <div className="flex items-center gap-2 text-white/60">
-                                        <Flag code={match.leagues.countries.code} name={match.leagues.countries.name} className="w-5 h-3.5 shadow-sm" />
-                                        <Link href={`/predictions/football/${match.leagues.countries.name.toLowerCase()}`} className="hover:text-white transition-colors uppercase font-black" itemProp="item">
-                                            <span itemProp="name">{match.leagues.countries.name}</span>
+                                        <Flag code={match.leagues?.countries?.code} url={match.leagues?.countries?.flag_url} name={countryName} className="w-5 h-3.5 shadow-sm" />
+                                        <Link href={`/predictions/football/${countrySlug}`} className="hover:text-white transition-colors uppercase font-black">
+                                            <span>{countryName}</span>
                                         </Link>
                                     </div>
-                                    <meta itemProp="position" content="2" />
                                     <ChevronRight size={12} className="text-white/20" />
                                 </li>
                             )}
-                            <li className="flex items-center gap-2.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                                <span itemProp="name" className="text-white uppercase font-black">{match.league}</span>
-                                <meta itemProp="position" content={match.leagues?.countries?.name ? "3" : "2"} />
+                            <li className="flex items-center gap-2.5">
+                                <span className="text-white uppercase font-black">{match.league}</span>
                                 <ChevronRight size={12} className="text-white/20" />
                             </li>
-                            <li className="flex items-center gap-2.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                                <span itemProp="name" className="text-[var(--fs-yellow)] uppercase font-black leading-none">{match.home_team} vs {match.away_team}</span>
-                                <meta itemProp="position" content={match.leagues?.countries?.name ? "4" : "3"} />
+                            <li className="flex items-center gap-2.5">
+                                <span className="text-[var(--fs-yellow)] uppercase font-black leading-none">{match.home_team} vs {match.away_team}</span>
                             </li>
                         </ol>
                     </nav>
@@ -446,17 +537,24 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                 <main className="max-w-[1240px] mx-auto w-full px-2 py-6 grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-6">
                     <aside className="hidden lg:flex flex-col space-y-1 pr-2">
                         <div className="text-[10px] font-black text-white uppercase px-2 mb-1">Pinned Leagues</div>
-                        {pinnedLeagues.map((l, i) => (
-                            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white">
-                                <Flag
-                                    code={l.countries?.code}
-                                    url={l.countries?.flag_url}
-                                    name={l.countries?.name}
-                                    className="w-3.5 h-2.5"
-                                />
-                                <span className="text-[11px] font-medium truncate">{l.name}</span>
-                            </div>
-                        ))}
+                        {pinnedLeagues.map((l, i) => {
+                            const lCountrySlug = slugifyCountry(l.countries?.name || 'europe');
+                            return (
+                                <Link
+                                    key={i}
+                                    href={`/predictions/football/${lCountrySlug}`}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded transition-all cursor-pointer group hover:bg-white/5 text-white"
+                                >
+                                    <Flag
+                                        code={l.countries?.code}
+                                        url={l.countries?.flag_url}
+                                        name={l.countries?.name}
+                                        className="w-3.5 h-2.5"
+                                    />
+                                    <span className="text-[11px] font-medium truncate">{l.name}</span>
+                                </Link>
+                            );
+                        })}
                         <SidebarAd />
                         <SidebarCountries countriesByRegion={countriesByRegion} regionOrder={regionOrder} />
                     </aside>
@@ -465,26 +563,32 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                         <InnerAdBanner />
 
                         <div className="bg-[var(--fs-header)] rounded-xl overflow-hidden border border-white/5 shadow-2xl relative duelParticipant__container">
-                            {/* Premium Header with Integrated Hanging Date */}
+                            {/* Premium Header with Integrated Hanging Date & Visible Server-Rendered H1 */}
                             <div className="relative">
-                                <div className="bg-gradient-to-b from-[#164e63] to-[#083344] px-6 py-3 border-b border-black/40 flex items-center">
+                                <div className="bg-gradient-to-b from-[#164e63] to-[#083344] px-6 py-3 border-b border-black/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                                     <div className="flex items-center gap-3">
                                         <Flag
                                             code={match.leagues?.countries?.code}
                                             url={match.leagues?.countries?.flag_url}
-                                            name={match.leagues?.countries?.name}
+                                            name={countryName}
                                             className="w-[18px] h-[12px] shadow-sm"
                                         />
                                         <span className="text-[10px] font-black text-white uppercase tracking-tight drop-shadow-md">
-                                            {match.leagues?.countries?.name}:&nbsp;
+                                            {countryName && (
+                                                <Link href={`/predictions/football/${countrySlug}`} className="hover:text-[var(--fs-yellow)] transition-colors">
+                                                    {countryName}:&nbsp;
+                                                </Link>
+                                            )}
                                             <span className="text-white/70 font-bold">{match.league}</span>
                                         </span>
                                     </div>
+                                    <h1 className="text-[11px] sm:text-xs font-black text-white uppercase tracking-tight">
+                                        {match.home_team} vs {match.away_team} Prediction &amp; Match Preview
+                                    </h1>
                                 </div>
 
-                                {/* Hanging Date Badge - Honeycomb / Hexagonal Style */}
+                                {/* Hanging Date Badge */}
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 z-20 -mt-[1px] duelParticipant__startTime">
-                                    {/* Joint Overlay Softener */}
                                     <div className="absolute inset-x-0 top-0 h-4 bg-black/40 blur-md pointer-events-none" />
 
                                     <div className="bg-[#083344] px-7 py-2 flex items-center gap-3 shadow-2xl relative"
@@ -505,18 +609,14 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                                         </div>
                                     </div>
 
-                                    {/* Honeycomb Corner Overlays - Smoother Joint */}
                                     <div className="absolute top-0 -left-1.5 w-1.5 h-1.5 bg-black/50 blur-[1px] pointer-events-none" style={{ clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }} />
                                     <div className="absolute top-0 -right-1.5 w-1.5 h-1.5 bg-black/50 blur-[1px] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-
-                                    {/* Bottom-Edge Glow/Overlay */}
                                     <div className="absolute -bottom-1 left-2 right-2 h-[1px] bg-[var(--fs-yellow)]/20 blur-[2px] pointer-events-none" />
                                 </div>
                             </div>
 
-                            {/* Compact Match Body - Forced Inline for Mobile */}
+                            {/* Compact Match Body */}
                             <div className="pt-12 pb-8 px-4 md:px-12 relative flex flex-col items-center overflow-hidden duelParticipant">
-                                {/* Subtle Background Elements */}
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[var(--fs-yellow)]/5 rounded-full blur-[80px] pointer-events-none" />
 
                                 <div className="w-full grid grid-cols-3 items-center gap-2 md:gap-8 relative z-10">
@@ -540,10 +640,8 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                                     {/* Premium VS Divider */}
                                     <div className="flex flex-col items-center duelParticipant__score">
                                         <div className="relative flex items-center justify-center detailScore__matchInfo">
-                                            {/* Glowing Background Ring */}
                                             <div className="absolute inset-0 bg-[var(--fs-yellow)]/20 blur-xl opacity-30 select-none animate-pulse" style={{ animationDuration: '4s' }} />
 
-                                            {/* Central VS Emblem */}
                                             <div className="relative size-10 md:size-14 bg-[#083344] border border-white/10 rounded-lg rotate-45 flex items-center justify-center shadow-2xl detailScore__wrapper overflow-hidden">
                                                 <style dangerouslySetInnerHTML={{
                                                     __html: `
@@ -552,7 +650,6 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                                                         to { transform: translate(-50%, -50%) rotate(360deg); }
                                                     }
                                                 `}} />
-                                                {/* 60FPS Border Light Effect */}
                                                 <div className="absolute top-1/2 left-1/2 w-[250%] h-[250%] pointer-events-none"
                                                     style={{
                                                         background: 'conic-gradient(from 0deg, transparent 0%, transparent 40%, var(--fs-yellow) 50%, transparent 60%, transparent 100%)',
@@ -568,7 +665,6 @@ export default async function UnifiedPredictionsPage({ params, searchParams }: P
                                                 </div>
                                             </div>
 
-                                            {/* Decorative Side Lines */}
                                             <div className="absolute left-1/2 -translate-x-1/2 w-[140px] md:w-[200px] flex items-center justify-between pointer-events-none">
                                                 <div className="h-[1px] w-12 md:w-20 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                                                 <div className="h-[1px] w-12 md:w-20 bg-gradient-to-l from-transparent via-white/10 to-transparent" />

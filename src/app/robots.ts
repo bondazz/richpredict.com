@@ -1,21 +1,14 @@
-import { MetadataRoute } from 'next'
+import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = 'https://richpredict.com'
-
     return {
-        rules: {
-            userAgent: '*',
-            allow: '/',
-            disallow: ['/admin/', '/api/'],
-        },
-        sitemap: [
-            `${baseUrl}/sitemap.xml`,
-            `${baseUrl}/sitemap_index.xml`,
-            `${baseUrl}/sitemap-static.xml`,
-            `${baseUrl}/sitemap-countries.xml`,
-            `${baseUrl}/sitemap-news.xml`,
-            `${baseUrl}/sitemap-predictions-football.xml`
+        rules: [
+            {
+                userAgent: '*',
+                allow: '/',
+                disallow: ['/admin/', '/api/', '/private/'],
+            },
         ],
-    }
+        sitemap: 'https://richpredict.com/sitemap.xml',
+    };
 }

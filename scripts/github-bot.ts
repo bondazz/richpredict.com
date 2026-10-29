@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, Browser } from 'playwright';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -103,7 +103,6 @@ async function getDeepSeekAnalysis(matchData: any, logs: string[]) {
         const data: any = await response.json();
         const content = JSON.parse(data.choices[0].message.content);
 
-        // Sanitize Outcome
         let finalOutcome = content.AI_Signal_Outcome;
         if (!allowedMarkets.includes(finalOutcome)) {
             finalOutcome = allowedMarkets.find(m => m.toLowerCase().includes(finalOutcome.toLowerCase())) || 'Home Win';
@@ -130,7 +129,7 @@ async function runBot() {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const matchDate = tomorrow.toISOString().split('T')[0];
-        const maxMatches = 100; // Increased for GitHub Actions
+        const maxMatches = 100;
 
         console.log(`🚀 BOT: DeepSeek AI Strategic Sync (GitHub Edition)`);
         console.log(`Target Date: ${matchDate}`);
@@ -192,7 +191,6 @@ async function runBot() {
             let lastLeagueUrl = '';
             let lastCountryName = 'International';
 
-            // Select specifically within the live-table container
             const container = document.querySelector('#live-table');
             if (!container) return [];
 
@@ -208,8 +206,8 @@ async function runBot() {
                     const titleTextEl = el.querySelector('.headerLeague__title-text');
                     const leagueUrl = (el.querySelector('.headerLeague__title') as HTMLAnchorElement)?.href || '';
 
-                    if (categoryTextEl) lastCountryName = categoryTextEl.textContent.trim();
-                    if (titleTextEl) lastLeagueName = titleTextEl.textContent.trim();
+                    if (categoryTextEl) lastCountryName = categoryTextEl.textContent?.trim() || 'International';
+                    if (titleTextEl) lastLeagueName = titleTextEl.textContent?.trim() || 'General';
                     if (leagueUrl) lastLeagueUrl = leagueUrl;
                 } else {
                     const isMatch = el.classList.contains('event__match') || el.getAttribute('data-event-row') === 'true';
@@ -248,7 +246,7 @@ async function runBot() {
             const seoSlug = generateSEOSlug(match.home, match.away, baseSlug);
 
             // INSTANT DUPLICATE SKIP
-            const { data: exists } = await supabaseAdmin.from('predictions').select('id').eq('slug', seoSlug).single();
+            const { data: exists } = await supabaseAdmin.from('predictions').select('id').eq('slug', seoSlug).limit(1).maybeSingle();
             if (exists) {
                 console.log(`⏩ Skipping ${match.home} - Already published.`);
                 continue;
@@ -257,21 +255,33 @@ async function runBot() {
             console.log(`-------------------------------------------`);
             console.log(`Syncing: ${match.home} vs ${match.away}`);
 
-            // DB Assets Sync: Country
+            // DB Assets Sync: Country (Clean and deduplicated)
             let countryId = '';
-            const { data: existingCountry } = await supabaseAdmin.from('countries').select('id, flag_url').ilike('name', match.countryName).single();
+            const cleanCountryName = match.countryName
+                .trim()
+                .replace(/&/g, 'and')
+                .split(/\s+/)
+                .map((w: string) => w.toLowerCase() === 'and' ? 'and' : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                .join(' ');
+
+            const { data: existingCountry } = await supabaseAdmin
+                .from('countries')
+                .select('id, flag_url')
+                .ilike('name', cleanCountryName)
+                .limit(1)
+                .maybeSingle();
 
             if (existingCountry) {
                 countryId = existingCountry.id;
             } else {
-                const normalizedCountry = match.countryName.toUpperCase();
-                const { data: regionMatch } = await supabaseAdmin.from('regions').select('id').ilike('name', normalizedCountry).single();
+                const normalizedCountry = cleanCountryName.toUpperCase();
+                const { data: regionMatch } = await supabaseAdmin.from('regions').select('id').ilike('name', normalizedCountry).limit(1).maybeSingle();
                 const targetRegionId = regionMatch?.id || defaultRegionId;
 
                 const { data: newCountry } = await supabaseAdmin.from('countries').insert([{
-                    name: match.countryName,
+                    name: cleanCountryName,
                     region_id: targetRegionId
-                }]).select().single();
+                }]).select().limit(1).maybeSingle();
                 countryId = newCountry?.id || '';
             }
 
@@ -279,7 +289,13 @@ async function runBot() {
 
             // DB Assets Sync: League & Country Flag update
             let leagueId = '';
-            const { data: existingLeague } = await supabaseAdmin.from('leagues').select('id, logo_url').eq('country_id', countryId).ilike('name', match.leagueName).single();
+            const { data: existingLeague } = await supabaseAdmin
+                .from('leagues')
+                .select('id, logo_url')
+                .eq('country_id', countryId)
+                .ilike('name', match.leagueName)
+                .limit(1)
+                .maybeSingle();
 
             const syncLeagueAndFlag = async () => {
                 const lp = await context.newPage();
@@ -290,7 +306,7 @@ async function runBot() {
 
                     if (furl) {
                         await supabaseAdmin.from('countries').update({ flag_url: furl }).eq('id', countryId);
-                        console.log(`🏳️ Updated Country Flag: ${match.countryName}`);
+                        console.log(`🏳️ Updated Country Flag: ${cleanCountryName}`);
                     }
 
                     if (existingLeague) {
@@ -304,7 +320,7 @@ async function runBot() {
                             name: match.leagueName,
                             country_id: countryId,
                             logo_url: lurl
-                        }]).select().single();
+                        }]).select().limit(1).maybeSingle();
                         return nl?.id || '';
                     }
                 } catch (e: any) {
@@ -324,7 +340,6 @@ async function runBot() {
                 console.log(`🔍 Navigating to Match Detail: ${match.home} vs ${match.away}`);
                 await matchPage.goto(match.matchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-                // Wait for team images to appear
                 await matchPage.waitForSelector('.duelParticipant__home .participant__image', { timeout: 8000 }).catch(() => { });
 
                 homeHd = await matchPage.$eval('.duelParticipant__home img.participant__image', (img: any) => img.src).catch(() => '');
@@ -336,7 +351,6 @@ async function runBot() {
 
             // 2. TEAM SYNC (GLOBAL LOOKUP BY NAME)
             const syncTeam = async (name: string, hdUrl: string) => {
-                // Search globally by name to catch teams regardless of country/league context
                 const { data: existing } = await supabaseAdmin.from('teams')
                     .select('id, logo_url')
                     .ilike('name', name)
@@ -344,27 +358,25 @@ async function runBot() {
                     .maybeSingle();
 
                 if (existing) {
-                    // Update logo if we have a valid HD one and it's different or missing
                     if (hdUrl && hdUrl.startsWith('http') && hdUrl !== existing.logo_url) {
                         await supabaseAdmin.from('teams').update({ logo_url: hdUrl }).eq('id', existing.id);
                         console.log(`♻️ Updated logo for existing team: ${name}`);
                     }
                     return existing.id;
                 } else {
-                    // Create new team with the HD logo immediately
                     const { data: nt } = await supabaseAdmin.from('teams').insert([{
                         name: name,
                         country_id: countryId,
                         league_id: leagueId || null,
                         logo_url: hdUrl || null
-                    }]).select().single();
+                    }]).select().limit(1).maybeSingle();
                     console.log(`🆕 Created team with HD logo: ${name}`);
                     return nt?.id || null;
                 }
             };
 
-            const homeId = await syncTeam(match.home, homeHd);
-            const awayId = await syncTeam(match.away, awayHd);
+            await syncTeam(match.home, homeHd);
+            await syncTeam(match.away, awayHd);
 
             // AI ANALYSIS
             console.log(`Consulting DeepSeek AI for ${match.home}...`);

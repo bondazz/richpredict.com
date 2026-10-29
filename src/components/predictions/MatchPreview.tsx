@@ -9,9 +9,9 @@ interface MatchPreviewProps {
 }
 
 export default function MatchPreview({ content }: MatchPreviewProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
+    // Default to expanded (true) so search engines and users immediately see the full unique match analysis
+    const [isExpanded, setIsExpanded] = useState(true);
 
-    // Default placeholder if content is empty or generic
     const displayContent = content || "Institutional node sync reveals a significant advantage. Market density is concentrating on high-probability outcomes. Detailed match dynamics show strong correlation between early pressure and final score output.";
 
     return (
@@ -22,7 +22,7 @@ export default function MatchPreview({ content }: MatchPreviewProps) {
             >
                 <div className="flex items-center gap-2">
                     <div className="w-1 h-3 bg-[var(--fs-yellow)] rounded-full" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Preview</span>
+                    <h2 className="text-[10px] font-black uppercase tracking-widest text-white/60">Tactical Match Preview & Analysis</h2>
                 </div>
                 <div className="flex items-center gap-1 text-[9px] font-bold text-[var(--fs-yellow)] uppercase">
                     {isExpanded ? "Show less" : "Show full preview"}
@@ -32,7 +32,7 @@ export default function MatchPreview({ content }: MatchPreviewProps) {
 
             <div className={cn(
                 "p-6 transition-all duration-500 ease-in-out relative",
-                isExpanded ? "max-h-[8000px] opacity-100" : "max-h-[280px] opacity-90 overflow-hidden"
+                isExpanded ? "max-h-none opacity-100" : "max-h-[280px] opacity-90 overflow-hidden"
             )}>
                 <div
                     className="prose prose-invert max-w-none text-[13px] text-white/80 leading-relaxed font-medium 

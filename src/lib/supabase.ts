@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { slugifyCountry } from './utils'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -313,105 +314,141 @@ export const getPredictionById = async (id: string | number) => {
     return data
 }
 
+const PREDICTION_FULL_SELECT = `
+    *,
+    leagues (
+        name,
+        logo_url,
+        country_id,
+        countries (
+            name,
+            flag_url,
+            code
+        )
+    )
+`;
+
 export const getPredictionBySlug = async (slug: string) => {
-    // 1. Try exact match
-    let { data, error } = await supabase
+    // 1. Try exact match or direct variant slugs
+    const candidateSlugs = Array.from(new Set([
+        slug,
+        slug.replace('-predictions-betting-tips-match-previews-', '-'),
+        slug.replace('-predictions-betting-tips-match-previews', ''),
+        slug.replace('-prediction-', '-'),
+        slug.replace(/-prediction$/, '')
+    ]));
+
+    const { data: exactData, error: exactError } = await supabase
         .from('predictions')
-        .select(`
-            *,
-            leagues (
-                name,
-                logo_url,
-                country_id,
-                countries (
-                    name,
-                    flag_url,
-                    code
-                )
-            )
-        `)
-        .eq('slug', slug)
-        .maybeSingle()
+        .select(PREDICTION_FULL_SELECT)
+        .in('slug', candidateSlugs)
+        .limit(1)
+        .maybeSingle();
 
-    if (!error && data) return data as Prediction
+    if (!exactError && exactData) return exactData as Prediction;
 
-    // 2. Try to parse SEO slug format: [home]-vs-[away]-predictions...-[suffix]
-    const parts = slug.split('-')
-    const previewIndex = parts.indexOf('previews')
+    // 2. Parse SEO slug format: [home]-vs-[away]-predictions-betting-tips-match-previews-[suffix]
+    const dateMatch = slug.match(/(\d{4}-\d{2}-\d{2})$/);
+    const parts = slug.split('-');
+    const previewIndex = parts.indexOf('previews');
+    const suffix = dateMatch
+        ? dateMatch[1]
+        : (previewIndex !== -1 ? parts.slice(previewIndex + 1).join('-') : parts[parts.length - 1]);
 
-    // Extract suffix (usually a date or ID)
-    const suffix = previewIndex !== -1 ? parts.slice(previewIndex + 1).join('-') : parts[parts.length - 1]
+    // Strip trailing suffix and prediction/preview keywords to isolate home-vs-away
+    const coreSlug = slug
+        .replace(/-predictions-betting-tips-match-previews.*$/, '')
+        .replace(/-?\d{4}-\d{2}-\d{2}$/, '')
+        .replace(/-(predictions?-previews?|predictions?|previews?)$/, '');
 
-    // Extract home and away team names from the beginning of the slug
-    // Format is usually: home-name-vs-away-name-predictions...
-    const vsIndex = parts.indexOf('vs')
-    let homePart = ''
-    let awayPart = ''
+    const vsParts = coreSlug.split('-vs-');
+    const homePart = vsParts[0] ? vsParts[0].replace(/-/g, ' ') : '';
+    const awayPart = vsParts[1] ? vsParts[1].replace(/-/g, ' ') : '';
 
-    if (vsIndex !== -1) {
-        homePart = parts.slice(0, vsIndex).join(' ')
-        // Find "predictions" to mark the end of the away team name
-        const predIndex = parts.indexOf('predictions')
-        if (predIndex !== -1) {
-            awayPart = parts.slice(vsIndex + 1, predIndex).join(' ')
-        }
-    }
-
-    // Robust cleaning for comparison
-    const cleanLook = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    // Search for predictions with the same date/suffix
-    const { data: results, error: searchError } = await supabase
-        .from('predictions')
-        .select(`
-            *,
-            leagues (
-                name,
-                logo_url,
-                country_id,
-                countries (
-                    name,
-                    flag_url,
-                    code
-                )
-            )
-        `)
-        .ilike('slug', `%${suffix}%`)
-        .limit(20);
-
-    if (searchError || !results || results.length === 0) {
-        return null;
-    }
-
-    // Find the best match by comparing cleaned team names
+    const cleanLook = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const homeClean = cleanLook(homePart);
     const awayClean = cleanLook(awayPart);
 
-    const bestMatch = results.find(r => {
-        const rHomeClean = cleanLook(r.home_team);
-        const rAwayClean = cleanLook(r.away_team);
+    // 3. Query matches on that date or with that slug suffix (limit 300 so busy matchdays never truncate)
+    if (suffix) {
+        const orFilter = dateMatch
+            ? `match_date.eq.${suffix},slug.ilike.%${suffix}%`
+            : `slug.ilike.%${suffix}%`;
 
-        // Match if both clean names are similar
-        return (rHomeClean.includes(homeClean) || homeClean.includes(rHomeClean)) &&
-            (rAwayClean.includes(awayClean) || awayClean.includes(rAwayClean));
-    });
+        const { data: dateResults } = await supabase
+            .from('predictions')
+            .select(PREDICTION_FULL_SELECT)
+            .or(orFilter)
+            .limit(300);
 
-    if (bestMatch) return bestMatch as Prediction;
+        if (dateResults && dateResults.length > 0) {
+            const bestMatch = dateResults.find(r => {
+                const rHomeClean = cleanLook(r.home_team);
+                const rAwayClean = cleanLook(r.away_team);
+                return (rHomeClean && homeClean && (rHomeClean.includes(homeClean) || homeClean.includes(rHomeClean))) &&
+                    (rAwayClean && awayClean && (rAwayClean.includes(awayClean) || awayClean.includes(rAwayClean)));
+            });
+            if (bestMatch) return bestMatch as Prediction;
 
-    // Absolute fallback: just return the first one if only one result for that date
-    if (results.length === 1) return results[0] as Prediction;
+            if (dateResults.length === 1) return dateResults[0] as Prediction;
+
+            const partialMatch = dateResults.find(r => {
+                const rHomeClean = cleanLook(r.home_team);
+                const rAwayClean = cleanLook(r.away_team);
+                return (rHomeClean && homeClean && (rHomeClean.includes(homeClean) || homeClean.includes(rHomeClean))) ||
+                    (rAwayClean && awayClean && (rAwayClean.includes(awayClean) || awayClean.includes(rAwayClean)));
+            });
+            if (partialMatch) return partialMatch as Prediction;
+        }
+    }
+
+    // 4. Fallback: search by team names directly across all dates
+    if (homePart && awayPart) {
+        const homeToken = homePart.split(' ').filter(Boolean)[0] || homePart;
+        const { data: teamResults } = await supabase
+            .from('predictions')
+            .select(PREDICTION_FULL_SELECT)
+            .ilike('home_team', `%${homeToken}%`)
+            .order('match_date', { ascending: false })
+            .limit(100);
+
+        if (teamResults && teamResults.length > 0) {
+            const bestTeamMatch = teamResults.find(r => {
+                const rHomeClean = cleanLook(r.home_team);
+                const rAwayClean = cleanLook(r.away_team);
+                return (rHomeClean.includes(homeClean) || homeClean.includes(rHomeClean)) &&
+                    (rAwayClean.includes(awayClean) || awayClean.includes(rAwayClean));
+            });
+            if (bestTeamMatch) return bestTeamMatch as Prediction;
+        }
+    }
 
     return null;
 }
 
-export const getCountriesByRegion = async () => {
+export const getCountriesByRegion = async (onlyActive = true) => {
     const { data, error } = await supabase
         .from('countries')
-        .select('*, regions(name)')
+        .select('*, regions(name), leagues(id)')
         .order('name', { ascending: true })
 
-    if (error) return []
-    return data
+    if (error || !data) return []
+
+    const filtered = onlyActive
+        ? data.filter((c: any) => Array.isArray(c.leagues) && c.leagues.length > 0)
+        : data;
+
+    // Deduplicate by slugified name so no duplicate links ever render
+    const seen = new Set<string>();
+    const unique: any[] = [];
+    for (const c of filtered) {
+        const slug = slugifyCountry(c.name);
+        if (!slug || seen.has(slug)) continue;
+        seen.add(slug);
+        unique.push(c);
+    }
+
+    return unique;
 }
 
 export const getCountryById = async (id: string) => {
@@ -419,33 +456,72 @@ export const getCountryById = async (id: string) => {
         .from('countries')
         .select('*, regions(name)')
         .eq('id', id)
-        .single()
+        .limit(1)
+        .maybeSingle()
 
     if (error) return null
     return data
 }
 
-export const getCountryByName = async (name: string) => {
-    // Standardize: decode and replace hyphens if needed
-    const decodedName = decodeURIComponent(name).replace(/-/g, ' ');
+const LEGACY_COUNTRY_SLUGS: Record<string, string> = {
+    'betway-premiershipsouth-africa': 'South Africa',
+    'copa-betano-do-brasilbrazil': 'Brazil',
+    'liga-futve-aperturavenezuela': 'Venezuela',
+    'uefa-youth-league-play-offseurope': 'Europe',
+    'v-league-1vietnam': 'Vietnam',
+    'antigua-barbuda': 'Antigua and Barbuda',
+    'australia-oceania': 'Australia and Oceania',
+    'north-central-america': 'North and Central America',
+};
 
-    // Try space-replaced name first
+export const getCountryByName = async (name: string) => {
+    const rawDecoded = decodeURIComponent(name).trim();
+    const targetSlug = slugifyCountry(rawDecoded);
+
+    if (LEGACY_COUNTRY_SLUGS[targetSlug]) {
+        const mappedName = LEGACY_COUNTRY_SLUGS[targetSlug];
+        const { data: mapped } = await supabase
+            .from('countries')
+            .select('*, regions(name)')
+            .ilike('name', mappedName)
+            .limit(1)
+            .maybeSingle();
+        if (mapped) return mapped;
+    }
+
+    const decodedName = rawDecoded.replace(/-/g, ' ');
+
+    // 1. Try space-replaced name first (using limit(1).maybeSingle() so duplicates never throw)
     const { data: data1 } = await supabase
         .from('countries')
         .select('*, regions(name)')
         .ilike('name', decodedName)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
     if (data1) return data1;
 
-    // Fallback search
+    // 2. Try raw name
     const { data: data2 } = await supabase
         .from('countries')
         .select('*, regions(name)')
-        .ilike('name', name)
-        .single();
+        .ilike('name', rawDecoded)
+        .limit(1)
+        .maybeSingle();
 
-    return data2 || null;
+    if (data2) return data2;
+
+    // 3. Fallback: compare slugifyCountry against all countries
+    const { data: allCountries } = await supabase
+        .from('countries')
+        .select('*, regions(name)');
+
+    if (allCountries) {
+        const matched = allCountries.find(c => slugifyCountry(c.name) === targetSlug);
+        if (matched) return matched;
+    }
+
+    return null;
 }
 
 export const getPredictionsByCountry = async (countryId: string, limit = 50, date?: string) => {
@@ -656,7 +732,7 @@ export const getFeaturedMatches = async (countryId?: string, limit = 10, categor
         }
     }
 
-    let { data, error } = await query.limit(limit * 3);
+    let { data } = await query.limit(limit * 3);
 
     // Fallback: If no matches found for future dates, fetch latest available matches
     if (!data || data.length === 0) {
@@ -693,18 +769,14 @@ export const getFeaturedMatches = async (countryId?: string, limit = 10, categor
         data = fallbackRes.data || [];
     }
 
-    // Randomize and slice
-    const shuffled = (data || []).sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, limit) as Prediction[];
+    // Deterministic selection instead of Math.random() so ISR cache stays consistent
+    return (data || []).slice(0, limit) as Prediction[];
 }
 
 export const getSynchronizedStats = () => {
     const now = new Date();
     const utcMonth = now.getUTCMonth();
     const utcYear = now.getUTCFullYear();
-    const utcDay = now.getUTCDate();
-    const utcHours = now.getUTCHours();
-    const utcMinutes = now.getUTCMinutes();
 
     // 1. Premium Analysts Sync Logic
     // Resets every month. Base: 186. +1-4 every 5 minutes.
@@ -722,39 +794,30 @@ export const getSynchronizedStats = () => {
     const lastIncrement = ((fiveMinIntervals * 17 + 11) % 4) + 1;
 
     // Online Users Sync Logic (10s intervals)
-    // 3 steps increase, 1 step decrease pattern (or vice versa)
     const tenSecIntervalsSinceEpoch = Math.floor(now.getTime() / 10000);
-
-    // Create a 4-step sequence (40 seconds total)
     const stepInSequence = tenSecIntervalsSinceEpoch % 4;
-
-    // Use a daily/hourly seed to determine if this 40s block is mostly growing or shrinking
     const hourSeed = Math.floor(now.getTime() / (3600 * 1000));
-    const blockTypeSeed = (hourSeed * 13 + Math.floor(tenSecIntervalsSinceEpoch / 40)) % 2; // Changes every ~6 mins
+    const blockTypeSeed = (hourSeed * 13 + Math.floor(tenSecIntervalsSinceEpoch / 40)) % 2;
 
-    // Daily base
     const dailySeed = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
     const dailyBase = 1200 + ((dailySeed * 123) % 1200);
 
-    // Wave movement (long term cycle 15 mins)
     const longTermCycle = (tenSecIntervalsSinceEpoch % 90) / 90;
     const waveBase = dailyBase + Math.sin(longTermCycle * Math.PI * 2) * 800;
 
     let onlineCount = waveBase;
 
     if (blockTypeSeed === 0) {
-        // Growth block: 3 steps UP, 1 step DOWN
         if (stepInSequence < 3) {
             onlineCount += (stepInSequence * 150) + (tenSecIntervalsSinceEpoch % 30);
         } else {
-            onlineCount += 200 - (tenSecIntervalsSinceEpoch % 40); // Small dip
+            onlineCount += 200 - (tenSecIntervalsSinceEpoch % 40);
         }
     } else {
-        // Shrink block: 3 steps DOWN, 1 step UP
         if (stepInSequence < 3) {
             onlineCount -= (stepInSequence * 150) + (tenSecIntervalsSinceEpoch % 30);
         } else {
-            onlineCount -= 200 - (tenSecIntervalsSinceEpoch % 40); // Small recovery
+            onlineCount -= 200 - (tenSecIntervalsSinceEpoch % 40);
         }
     }
 
@@ -776,4 +839,3 @@ export const getSiteSettings = async (id: string) => {
     if (error) return null
     return data.value
 }
-
